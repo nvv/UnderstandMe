@@ -18,10 +18,13 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.vnamashko.understandme.language.picker.R.string.translate_from
+import com.vnamashko.understandme.language.picker.R.string.translate_to
 import com.vnamashko.understandme.ui.theme.UnderstandMeTheme
-import com.vnamashko.undertsndme.language.picker.LanguagePickerControl
 import com.vnamashko.undertsndme.language.picker.LanguageFor
+import com.vnamashko.undertsndme.language.picker.LanguagePickerControl
 import com.vnamashko.undertsndme.translation.screen.TranslationScreen
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.launch
@@ -40,7 +43,7 @@ class MainActivity : ComponentActivity() {
             val sourceLanguage by viewModel.sourceLanguage.collectAsStateWithLifecycle()
             val targetLanguage by viewModel.targetLanguage.collectAsStateWithLifecycle()
 
-            var selectForTarget by remember { mutableStateOf<LanguageFor?>(null) }
+            var selectFor by remember { mutableStateOf<LanguageFor?>(null) }
 
             val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
             val scope = rememberCoroutineScope()
@@ -55,7 +58,7 @@ class MainActivity : ComponentActivity() {
                         },
                         translation = value,
                         selectForTarget = { target ->
-                            selectForTarget = target
+                            selectFor = target
                             showBottomSheet = true
                         },
                         sourceLanguage = sourceLanguage,
@@ -68,7 +71,7 @@ class MainActivity : ComponentActivity() {
                     if (showBottomSheet) {
                         ModalBottomSheet(
                             onDismissRequest = {
-                                selectForTarget = null
+                                selectFor = null
                                 showBottomSheet = false
                             },
                             sheetState = sheetState,
@@ -77,7 +80,7 @@ class MainActivity : ComponentActivity() {
                         ) {
                             LanguagePickerControl(
                                 supportedLanguages = languages,
-                                selectedLanguage = when (selectForTarget) {
+                                selectedLanguage = when (selectFor) {
                                     LanguageFor.SOURCE -> sourceLanguage
                                     LanguageFor.TARGET -> targetLanguage
                                     null -> null
@@ -89,13 +92,16 @@ class MainActivity : ComponentActivity() {
                                         }
                                     }
 
-                                    when (selectForTarget) {
+                                    when (selectFor) {
                                         LanguageFor.SOURCE -> viewModel.selectSourceLanguage(it)
-                                        LanguageFor.TARGET -> viewModel.selectTargetLanguage(
-                                            it
-                                        )
+                                        LanguageFor.TARGET -> viewModel.selectTargetLanguage(it)
                                         null -> {}
                                     }
+                                },
+                                searchTitle = when (selectFor) {
+                                    LanguageFor.SOURCE -> stringResource(translate_from)
+                                    LanguageFor.TARGET -> stringResource(translate_to)
+                                    null -> ""
                                 }
                             )
                         }

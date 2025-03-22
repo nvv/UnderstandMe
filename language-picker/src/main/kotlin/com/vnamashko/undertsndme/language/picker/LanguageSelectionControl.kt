@@ -40,7 +40,7 @@ fun LanguageSelectionControl(
         horizontalArrangement = Arrangement.Absolute.Center,
         verticalAlignment = Alignment.CenterVertically
     ) {
-        LanguageDropdown(
+        LanguagePill(
             label = sourceLanguage?.displayName ?: stringResource(R.string.detect_language),
             onSelected = {
                 selectFor(LanguageFor.SOURCE)
@@ -54,7 +54,7 @@ fun LanguageSelectionControl(
         )
         Spacer(modifier = Modifier.width(16.dp))
 
-        LanguageDropdown(
+        LanguagePill(
             label = targetLanguage?.displayName ?: stringResource(R.string.detect_language),
             onSelected = {
                 selectFor(LanguageFor.TARGET)
@@ -63,8 +63,7 @@ fun LanguageSelectionControl(
 }
 
 @Composable
-fun LanguageDropdown(label: String, onSelected: () -> Unit, modifier: Modifier = Modifier) {
-
+fun LanguagePill(label: String, onSelected: () -> Unit, modifier: Modifier = Modifier) {
     Surface(
         shape = RoundedCornerShape(16.dp),
         color = MaterialTheme.colorScheme.surfaceContainer,
