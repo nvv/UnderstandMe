@@ -55,7 +55,7 @@ fun LanguageSelectionControl(
         Spacer(modifier = Modifier.width(16.dp))
 
         LanguagePill(
-            label = targetLanguage?.displayName ?: stringResource(R.string.detect_language),
+            label = targetLanguage?.displayName ?: stringResource(R.string.select_language),
             onSelected = {
                 selectFor(LanguageFor.TARGET)
             })

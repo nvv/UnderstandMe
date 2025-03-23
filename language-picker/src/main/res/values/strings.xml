@@ -1,4 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="detect_language">Detect Language</string>
+    <string name="select_language">Select Language</string>
+    <string name="translate_to">Translate To</string>
+    <string name="translate_from">Translate From</string>
 </resources>

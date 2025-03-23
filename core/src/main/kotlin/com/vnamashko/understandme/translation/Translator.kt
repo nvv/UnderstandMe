@@ -34,9 +34,9 @@ interface Translator {
 
     fun translate(text: String)
 
-    fun setSourceLanguage(language: Language)
+    fun setSourceLanguage(language: String)
 
-    fun setTargetLanguage(language: Language)
+    fun setTargetLanguage(language: String)
 }
 
 class TranslatorImpl @Inject constructor(
@@ -48,8 +48,8 @@ class TranslatorImpl @Inject constructor(
     private val _state: MutableStateFlow<State> = MutableStateFlow(State.IDLE)
     override val state: StateFlow<State> = _state.asStateFlow()
 
-    private val sourceLanguage = MutableStateFlow(TranslateLanguage.ENGLISH)
-    private val targetLanguage = MutableStateFlow(TranslateLanguage.SPANISH)
+    private val sourceLanguage = MutableStateFlow<String?>(null)
+    private val targetLanguage = MutableStateFlow<String?>(null)
 
     private val textToTranslate = MutableStateFlow<String?>(null)
 
@@ -66,11 +66,12 @@ class TranslatorImpl @Inject constructor(
         emit(models.map { it.language })
     }.stateIn(externalScope, SharingStarted.Lazily, emptyList())
 
-    private val translator: StateFlow<MlKitTranslator?> = combine(sourceLanguage, targetLanguage) { source, target ->
-        val options = TranslatorOptions.Builder()
-            .setSourceLanguage(source)
-            .setTargetLanguage(target)
-            .build()
+    private val translator: StateFlow<MlKitTranslator?> =
+        combine(sourceLanguage.filterNotNull(), targetLanguage.filterNotNull()) { source, target ->
+            val options = TranslatorOptions.Builder()
+                .setSourceLanguage(source)
+                .setTargetLanguage(target)
+                .build()
 
         _state.value = State.LOADING_MODEL
         val translator = Translation.getClient(options)
@@ -91,12 +92,12 @@ class TranslatorImpl @Inject constructor(
         textToTranslate.value = text.takeIf { it.isNotBlank() }
     }
 
-    override fun setSourceLanguage(language: Language) {
-        sourceLanguage.value = language.code
+    override fun setSourceLanguage(language: String) {
+        sourceLanguage.value = language
     }
 
-    override fun setTargetLanguage(language: Language) {
-        targetLanguage.value = language.code
+    override fun setTargetLanguage(language: String) {
+        targetLanguage.value = language
     }
 
     init {

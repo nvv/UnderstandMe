@@ -135,7 +135,9 @@ fun LanguagePickerControl(
 
     LaunchedEffect(selectedIndex) {
         coroutineScope.launch {
-            listState.scrollToItem(selectedIndex)
+            if (selectedIndex > 0) {
+                listState.scrollToItem(selectedIndex)
+            }
         }
     }
 
