@@ -38,10 +38,11 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
         setContent {
-            val value by viewModel.counter.collectAsStateWithLifecycle()
+            val value by viewModel.translatedText.collectAsStateWithLifecycle()
             val languages by viewModel.supportedLanguages.collectAsStateWithLifecycle()
             val sourceLanguage by viewModel.sourceLanguage.collectAsStateWithLifecycle()
             val targetLanguage by viewModel.targetLanguage.collectAsStateWithLifecycle()
+            val downloadedLanguages by viewModel.downloadedLanguages.collectAsStateWithLifecycle()
 
             var selectFor by remember { mutableStateOf<LanguageFor?>(null) }
 

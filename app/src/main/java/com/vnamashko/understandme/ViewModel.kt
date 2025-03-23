@@ -19,8 +19,7 @@ class ViewModel @Inject constructor(
     private val translator: Translator
 ) : androidx.lifecycle.ViewModel() {
 
-    private val _counter = MutableStateFlow<String?>(null)
-    val counter : StateFlow<String?> = _counter.asStateFlow()
+    val translatedText : StateFlow<String?> = translator.translatedText
 
     private val _sourceLanguage = MutableStateFlow(translator.supportedLanguages.find { it.code == "en" })
     val sourceLanguage = _sourceLanguage.asStateFlow()
@@ -33,17 +32,19 @@ class ViewModel @Inject constructor(
         emptyList()
     )
 
+    val downloadedLanguages = translator.downloadedModels
+
     fun translate(text: String) {
-        viewModelScope.launch(Dispatchers.Default) {
-            _counter.value = translator.translate(text).takeIf { it.isNotEmpty() }
-        }
+        translator.translate(text)
     }
 
     fun selectSourceLanguage(language: Language) {
         _sourceLanguage.value = language
+        translator.setSourceLanguage(language)
     }
 
     fun selectTargetLanguage(language: Language) {
         _targetLanguage.value = language
+        translator.setTargetLanguage(language)
     }
 }
