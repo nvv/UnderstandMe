@@ -27,6 +27,9 @@ import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalClipboardManager
+import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.vnamashko.undertsndme.language.picker.LanguageSelectionControl
@@ -38,6 +41,8 @@ import kotlinx.coroutines.FlowPreview
 @Composable
 fun TranslationScreen(
     onTextChanged: (String) -> Unit,
+    playbackOriginalText: () -> Unit,
+    playbackTranslatedText: () -> Unit,
     translation: String?,
     targetLanguage: Language?,
     sourceLanguage: Language?,
@@ -45,7 +50,12 @@ fun TranslationScreen(
     modifier: Modifier = Modifier
 ) {
     Column(modifier = modifier.fillMaxSize()) {
-        TranslationInputOutput(onTextChanged, translation)
+        TranslationInputOutput(
+            onTextChanged = onTextChanged,
+            playbackOriginalText = playbackOriginalText,
+            playbackTranslatedText = playbackTranslatedText,
+            translation = translation
+        )
         Spacer(modifier = Modifier.weight(1f))
         LanguageSelectionControl(
             sourceLanguage = sourceLanguage,
@@ -59,10 +69,14 @@ fun TranslationScreen(
 @Composable
 fun TranslationInputOutput(
     onTextChanged: (String) -> Unit,
+    playbackOriginalText: () -> Unit,
+    playbackTranslatedText: () -> Unit,
     translation: String?,
     modifier: Modifier = Modifier
 ) {
     var textToTranslate by remember { mutableStateOf("") }
+
+    val clipboardManager = LocalClipboardManager.current
 
     LaunchedEffect(textToTranslate) {
         snapshotFlow { textToTranslate }
@@ -92,7 +106,7 @@ fun TranslationInputOutput(
             value = textToTranslate,
             placeholder = {
                 Text(
-                    "Enter text",
+                    stringResource(R.string.enter_text),
                     style = MaterialTheme.typography.titleLarge
                 )
             },
@@ -102,10 +116,17 @@ fun TranslationInputOutput(
                 focusedBorderColor = Color.Transparent,
             ),
             textStyle = MaterialTheme.typography.titleLarge,
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(bottom = 8.dp)
+            modifier = Modifier.fillMaxWidth()
         )
+
+        if (translation != null) {
+            TextToolbarControl(
+                onPlaybackClicked = playbackOriginalText,
+                onCopyClicked = { clipboardManager.setText(AnnotatedString(textToTranslate)) },
+                tint = MaterialTheme.colorScheme.onSurface,
+                modifier = Modifier.padding(bottom = 8.dp)
+            )
+        }
 
         if (translation != null) {
             Column {
@@ -121,6 +142,12 @@ fun TranslationInputOutput(
                     text = translation,
                     style = MaterialTheme.typography.titleLarge.copy(color = MaterialTheme.colorScheme.primary),
                     modifier = modifier.padding(16.dp)
+                )
+
+                TextToolbarControl(
+                    onPlaybackClicked = playbackTranslatedText,
+                    onCopyClicked = { clipboardManager.setText(AnnotatedString(translation)) },
+                    tint = MaterialTheme.colorScheme.primary
                 )
             }
         }

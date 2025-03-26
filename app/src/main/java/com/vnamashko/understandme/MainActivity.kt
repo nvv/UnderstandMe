@@ -1,6 +1,8 @@
 package com.vnamashko.understandme
 
+import android.content.Intent
 import android.os.Bundle
+import android.speech.tts.TextToSpeech
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
@@ -56,6 +58,12 @@ class MainActivity : ComponentActivity() {
                     TranslationScreen(
                         onTextChanged = {
                             viewModel.translate(it)
+                        },
+                        playbackOriginalText = {
+                            viewModel.playbackOriginal()
+                        },
+                        playbackTranslatedText = {
+                            viewModel.playbackTranslated()
                         },
                         translation = value,
                         selectForTarget = { target ->

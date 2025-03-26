@@ -3,27 +3,28 @@ package com.vnamashko.understandme
 import androidx.lifecycle.viewModelScope
 import com.vnamashko.understandme.settings.SettingsDataStore
 import com.vnamashko.understandme.translation.Translator
+import com.vnamashko.understandme.translation.model.Language
+import com.vnamashko.understandme.tts.Tts
 import dagger.hilt.android.lifecycle.HiltViewModel
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.filterNotNull
+import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
-import com.vnamashko.understandme.translation.model.Language
-import kotlinx.coroutines.flow.collect
-import kotlinx.coroutines.flow.filterNotNull
-import kotlinx.coroutines.flow.firstOrNull
 import javax.inject.Inject
 
 @HiltViewModel
 class ViewModel @Inject constructor(
     private val dataStore: SettingsDataStore,
     private val translator: Translator,
+    private val tts: Tts,
 ) : androidx.lifecycle.ViewModel() {
 
+    private val originalText: MutableStateFlow<String> = MutableStateFlow("")
     val translatedText: StateFlow<String?> = translator.translatedText
 
     private val _sourceLanguage = MutableStateFlow<Language?>(null)
@@ -40,7 +41,16 @@ class ViewModel @Inject constructor(
     val downloadedLanguages = translator.downloadedModels
 
     fun translate(text: String) {
+        originalText.value = text
         translator.translate(text)
+    }
+
+    fun playbackOriginal() {
+        tts.speak(originalText.value, _sourceLanguage.value?.code)
+    }
+
+    fun playbackTranslated() {
+        tts.speak(translatedText.value ?: "", _targetLanguage.value?.code)
     }
 
     fun selectSourceLanguage(language: Language) {
