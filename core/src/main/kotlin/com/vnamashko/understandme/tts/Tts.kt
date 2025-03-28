@@ -17,6 +17,7 @@ interface Tts {
     fun speak(text: String, languageCode: String?)
     fun stop()
     fun setSpeechRate(rate: Float)
+    fun isLanguageAvailable(languageCode: String): Boolean
 }
 
 class TtsImpl @Inject constructor(context: Context) : Tts {
@@ -95,6 +96,11 @@ class TtsImpl @Inject constructor(context: Context) : Tts {
 
     override fun setSpeechRate(rate: Float) {
         speechRate = rate.coerceIn(0.1f, 2.0f)
+    }
+
+    override fun isLanguageAvailable(languageCode: String): Boolean {
+        val availableLanguages = textToSpeech?.availableLanguages?.takeIf { isReady.value }
+        return availableLanguages?.map { it.language }?.contains(languageCode) == true
     }
 }
 

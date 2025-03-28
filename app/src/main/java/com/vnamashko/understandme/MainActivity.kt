@@ -13,7 +13,11 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SnackbarDuration
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.rememberModalBottomSheetState
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -27,6 +31,7 @@ import com.vnamashko.understandme.language.picker.R.string.translate_to
 import com.vnamashko.understandme.ui.theme.UnderstandMeTheme
 import com.vnamashko.undertsndme.language.picker.LanguageFor
 import com.vnamashko.undertsndme.language.picker.LanguagePickerControl
+import com.vnamashko.undertsndme.translation.screen.TranslationError
 import com.vnamashko.undertsndme.translation.screen.TranslationScreen
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.launch
@@ -51,10 +56,18 @@ class MainActivity : ComponentActivity() {
             val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
             val scope = rememberCoroutineScope()
 
+            var errorState by remember { mutableStateOf<TranslationError?>(null) }
+
+            val snackbarHostState = remember { SnackbarHostState() }
             var showBottomSheet by remember { mutableStateOf(false) }
 
             UnderstandMeTheme {
-                Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
+                Scaffold(
+                    snackbarHost = {
+                        SnackbarHost(hostState = snackbarHostState)
+                    },
+                    modifier = Modifier.fillMaxSize()
+                ) { innerPadding ->
                     TranslationScreen(
                         onTextChanged = {
                             viewModel.translate(it)
@@ -72,6 +85,7 @@ class MainActivity : ComponentActivity() {
                         },
                         sourceLanguage = sourceLanguage,
                         targetLanguage = targetLanguage,
+                        error = errorState,
                         modifier = Modifier
                             .padding(innerPadding)
                             .fillMaxWidth()
@@ -113,6 +127,42 @@ class MainActivity : ComponentActivity() {
                                     null -> ""
                                 }
                             )
+                        }
+                    }
+                }
+            }
+
+            LaunchedEffect(Unit) {
+                viewModel.effect.collect { effect ->
+                    when (effect) {
+//                        is UiEffect.RequestLanguageDownload -> {
+//                            val intent = Intent(TextToSpeech.Engine.ACTION_INSTALL_TTS_DATA)
+//                            intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK
+//                            startActivity(intent)
+//                        }
+                        is UiEffect.LanguageModelDoesNotExists -> {
+                            errorState = TranslationError(
+                                title = getString(R.string.error_translating_title),
+                                subtitle = getString(
+                                    if (effect.isInternetAvailable) {
+                                        R.string.language_model_not_found
+                                    } else {
+                                        R.string.language_model_not_found_no_internet
+                                    }
+                                ),
+                                actionText = getString(R.string.error_try_again),
+                                onActionClick = {}
+                            )
+                        }
+
+                        is UiEffect.ErrorWhileTranslatingMessage -> {
+                            scope.launch {
+                                snackbarHostState
+                                    .showSnackbar(
+                                        message = getString(R.string.error_translating_text),
+                                        duration = SnackbarDuration.Long
+                                    )
+                            }
                         }
                     }
                 }

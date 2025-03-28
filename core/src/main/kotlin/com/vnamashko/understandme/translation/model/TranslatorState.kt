@@ -1,5 +1,5 @@
 package com.vnamashko.understandme.translation.model
 
-enum class State {
-    IDLE, LOADING_MODEL, TRANSLATING
+enum class Event {
+    LOADING_MODEL, TRANSLATING, MODEL_DOES_NOT_EXISTS, ERROR_TRANSLATING
 }

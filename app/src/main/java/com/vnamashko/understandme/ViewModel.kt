@@ -1,14 +1,18 @@
 package com.vnamashko.understandme
 
 import androidx.lifecycle.viewModelScope
+import com.vnamashko.understandme.network.NetworkConnectionManager
 import com.vnamashko.understandme.settings.SettingsDataStore
 import com.vnamashko.understandme.translation.Translator
+import com.vnamashko.understandme.translation.model.Event
 import com.vnamashko.understandme.translation.model.Language
 import com.vnamashko.understandme.tts.Tts
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.flow.firstOrNull
@@ -20,9 +24,13 @@ import javax.inject.Inject
 @HiltViewModel
 class ViewModel @Inject constructor(
     private val dataStore: SettingsDataStore,
+    private val networkConnectionManager: NetworkConnectionManager,
     private val translator: Translator,
     private val tts: Tts,
 ) : androidx.lifecycle.ViewModel() {
+
+    private val _effect = MutableSharedFlow<UiEffect>()
+    val effect = _effect.asSharedFlow()
 
     private val originalText: MutableStateFlow<String> = MutableStateFlow("")
     val translatedText: StateFlow<String?> = translator.translatedText
@@ -50,7 +58,13 @@ class ViewModel @Inject constructor(
     }
 
     fun playbackTranslated() {
+//        if (tts.isLanguageAvailable(_targetLanguage.value?.code ?: "")) {
         tts.speak(translatedText.value ?: "", _targetLanguage.value?.code)
+//        } else {
+//            viewModelScope.launch {
+//                _effect.emit(UiEffect.RequestLanguageDownload)
+//            }
+//        }
     }
 
     fun selectSourceLanguage(language: Language) {
@@ -86,5 +100,27 @@ class ViewModel @Inject constructor(
             _targetLanguage.value =
                 translator.supportedLanguages.find { it.code == dataStore.targetLanguage.firstOrNull() }
         }
+
+        viewModelScope.launch {
+            translator.events.collect {
+                when (it) {
+                    Event.MODEL_DOES_NOT_EXISTS -> _effect.emit(
+                        UiEffect.LanguageModelDoesNotExists(
+                            networkConnectionManager.isInternetAvailable()
+                        )
+                    )
+
+                    Event.ERROR_TRANSLATING -> _effect.emit(UiEffect.ErrorWhileTranslatingMessage)
+                    Event.LOADING_MODEL -> {}
+                    Event.TRANSLATING -> {}
+                }
+            }
+        }
     }
+}
+
+sealed class UiEffect {
+    //    data object RequestLanguageDownload : UiEffect()
+    data class LanguageModelDoesNotExists(val isInternetAvailable: Boolean) : UiEffect()
+    data object ErrorWhileTranslatingMessage : UiEffect()
 }
