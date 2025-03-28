@@ -1,5 +1,6 @@
 package com.vnamashko.understandme
 
+import android.content.res.Resources
 import androidx.lifecycle.viewModelScope
 import com.vnamashko.understandme.network.NetworkConnectionManager
 import com.vnamashko.understandme.settings.SettingsDataStore
@@ -7,6 +8,7 @@ import com.vnamashko.understandme.translation.Translator
 import com.vnamashko.understandme.translation.model.Event
 import com.vnamashko.understandme.translation.model.Language
 import com.vnamashko.understandme.tts.Tts
+import com.vnamashko.undertsndme.translation.screen.TranslationError
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -27,6 +29,7 @@ class ViewModel @Inject constructor(
     private val networkConnectionManager: NetworkConnectionManager,
     private val translator: Translator,
     private val tts: Tts,
+    private val resources: Resources
 ) : androidx.lifecycle.ViewModel() {
 
     private val _effect = MutableSharedFlow<UiEffect>()
@@ -49,8 +52,18 @@ class ViewModel @Inject constructor(
     val downloadedLanguages = translator.downloadedModels
 
     fun translate(text: String) {
+        viewModelScope.launch {
+            _effect.emit(UiEffect.ClearError)
+        }
         originalText.value = text
         translator.translate(text)
+    }
+
+    private fun retryTranslate() {
+        viewModelScope.launch {
+            _effect.emit(UiEffect.ClearError)
+        }
+        translator.retryTranslate()
     }
 
     fun playbackOriginal() {
@@ -106,7 +119,20 @@ class ViewModel @Inject constructor(
                 when (it) {
                     Event.MODEL_DOES_NOT_EXISTS -> _effect.emit(
                         UiEffect.LanguageModelDoesNotExists(
-                            networkConnectionManager.isInternetAvailable()
+                            TranslationError(
+                                title = resources.getString(R.string.error_translating_title),
+                                subtitle = resources.getString(
+                                    if (networkConnectionManager.isInternetAvailable()) {
+                                        R.string.language_model_not_found
+                                    } else {
+                                        R.string.language_model_not_found_no_internet
+                                    }
+                                ),
+                                actionText = resources.getString(R.string.error_try_again),
+                                onActionClick = {
+                                    retryTranslate()
+                                }
+                            )
                         )
                     )
 
@@ -121,6 +147,7 @@ class ViewModel @Inject constructor(
 
 sealed class UiEffect {
     //    data object RequestLanguageDownload : UiEffect()
-    data class LanguageModelDoesNotExists(val isInternetAvailable: Boolean) : UiEffect()
+    data object ClearError : UiEffect()
+    data class LanguageModelDoesNotExists(val error: TranslationError) : UiEffect()
     data object ErrorWhileTranslatingMessage : UiEffect()
 }

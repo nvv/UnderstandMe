@@ -140,20 +140,9 @@ class MainActivity : ComponentActivity() {
 //                            intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK
 //                            startActivity(intent)
 //                        }
-                        is UiEffect.LanguageModelDoesNotExists -> {
-                            errorState = TranslationError(
-                                title = getString(R.string.error_translating_title),
-                                subtitle = getString(
-                                    if (effect.isInternetAvailable) {
-                                        R.string.language_model_not_found
-                                    } else {
-                                        R.string.language_model_not_found_no_internet
-                                    }
-                                ),
-                                actionText = getString(R.string.error_try_again),
-                                onActionClick = {}
-                            )
-                        }
+                        is UiEffect.ClearError -> { errorState = null }
+
+                        is UiEffect.LanguageModelDoesNotExists -> { errorState = effect.error }
 
                         is UiEffect.ErrorWhileTranslatingMessage -> {
                             scope.launch {

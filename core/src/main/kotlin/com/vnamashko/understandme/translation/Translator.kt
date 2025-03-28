@@ -12,6 +12,7 @@ import com.vnamashko.understandme.network.NetworkConnectionManager
 import com.vnamashko.understandme.translation.model.Language
 import com.vnamashko.understandme.translation.model.Event
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.channels.BufferOverflow
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharedFlow
@@ -22,7 +23,9 @@ import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.launchIn
+import kotlinx.coroutines.flow.shareIn
 import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.launch
 import java.util.Locale
 import javax.inject.Inject
 import com.google.mlkit.nl.translate.Translator as MlKitTranslator
@@ -37,6 +40,8 @@ interface Translator {
     val downloadedModels: StateFlow<List<String>>
 
     fun translate(text: String)
+
+    fun retryTranslate()
 
     fun setSourceLanguage(language: String)
 
@@ -58,6 +63,12 @@ class TranslatorImpl @Inject constructor(
 
     private val textToTranslate = MutableStateFlow<String?>(null)
 
+    private val retryTrigger = MutableSharedFlow<Boolean>(
+        replay = 1,
+        extraBufferCapacity = 1,
+        onBufferOverflow = BufferOverflow.DROP_OLDEST
+    )
+
     override val supportedLanguages: List<Language> by lazy {
         TranslateLanguage.getAllLanguages().map { code ->
             Language(code = code, displayName = Locale(code).displayName)
@@ -71,8 +82,12 @@ class TranslatorImpl @Inject constructor(
         emit(models.map { it.language })
     }.stateIn(externalScope, SharingStarted.Lazily, emptyList())
 
-    private val translator: StateFlow<MlKitTranslator?> =
-        combine(sourceLanguage.filterNotNull(), targetLanguage.filterNotNull()) { source, target ->
+    private val translator: SharedFlow<MlKitTranslator?> =
+        combine(
+            sourceLanguage.filterNotNull(),
+            targetLanguage.filterNotNull(),
+            retryTrigger
+        ) { source, target, _ ->
             val options = TranslatorOptions.Builder()
                 .setSourceLanguage(source)
                 .setTargetLanguage(target)
@@ -84,7 +99,7 @@ class TranslatorImpl @Inject constructor(
             Tasks.await(translator.downloadModelIfNeeded())
         }
         translator
-    }.stateIn(externalScope, SharingStarted.Eagerly, null)
+    }.shareIn(externalScope, SharingStarted.Eagerly, 0)
 
     override val translatedText = combine(translator.filterNotNull(), textToTranslate) { translator, text ->
         if (text == null) {
@@ -109,6 +124,11 @@ class TranslatorImpl @Inject constructor(
         textToTranslate.value = text.takeIf { it.isNotBlank() }
     }
 
+    override fun retryTranslate() {
+        // trigger retry by emitting new translator in case it was not downloaded
+        retryTrigger.tryEmit(true)
+    }
+
     override fun setSourceLanguage(language: String) {
         sourceLanguage.value = language
     }
@@ -119,5 +139,8 @@ class TranslatorImpl @Inject constructor(
 
     init {
         downloadedModels.launchIn(externalScope)
+        externalScope.launch {
+            retryTrigger.emit(true)
+        }
     }
 }

@@ -204,10 +204,10 @@ fun ErrorCard(error: TranslationError) {
                 color = MaterialTheme.colorScheme.onError
             )
 
-            if (error.actionText != null) {
+            if (error.actionText != null && error.onActionClick != null) {
                 Spacer(modifier = Modifier.height(16.dp))
 
-                TextButton(modifier = Modifier.align(Alignment.End), onClick = {}) {
+                TextButton(modifier = Modifier.align(Alignment.End), onClick = error.onActionClick) {
                     Text(
                         text = error.actionText,
                         color = MaterialTheme.colorScheme.onError
