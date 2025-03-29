@@ -2,6 +2,7 @@ package com.vnamashko.understandme
 
 import android.content.res.Resources
 import androidx.lifecycle.viewModelScope
+import com.vnamashko.understandme.coroutines.MainDispatcher
 import com.vnamashko.understandme.network.NetworkConnectionManager
 import com.vnamashko.understandme.settings.SettingsDataStore
 import com.vnamashko.understandme.translation.Translator
@@ -91,6 +92,24 @@ class ViewModel @Inject constructor(
         _targetLanguage.value = language
         viewModelScope.launch {
             dataStore.saveTargetLanguage(language.code)
+        }
+    }
+
+    fun flipLanguages() {
+        viewModelScope.launch {
+            val source = dataStore.sourceLanguage.firstOrNull()
+            val target = dataStore.targetLanguage.firstOrNull()
+
+            if (source != null && target != null) {
+                dataStore.saveSourceLanguage(target)
+                dataStore.saveTargetLanguage(source)
+            }
+
+            val sourceLanguage = _sourceLanguage.value
+            val targetLanguage = _targetLanguage.value
+
+            _sourceLanguage.value = targetLanguage
+            _targetLanguage.value = sourceLanguage
         }
     }
 

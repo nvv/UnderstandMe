@@ -31,12 +31,13 @@ fun LanguageSelectionControl(
     sourceLanguage: Language?,
     targetLanguage: Language?,
     selectFor: (LanguageFor) -> Unit,
+    flipLanguages: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     Row(
         modifier = modifier
             .fillMaxWidth()
-            .padding(8.dp),
+            .padding(vertical = 12.dp, horizontal = 32.dp),
         horizontalArrangement = Arrangement.Absolute.Center,
         verticalAlignment = Alignment.CenterVertically
     ) {
@@ -44,13 +45,19 @@ fun LanguageSelectionControl(
             label = sourceLanguage?.displayName ?: stringResource(R.string.detect_language),
             onSelected = {
                 selectFor(LanguageFor.SOURCE)
-            })
+            },
+            modifier = Modifier.weight(1f)
+        )
 
         Spacer(modifier = Modifier.width(16.dp))
         Icon(
             imageVector = Swap,
-            contentDescription = "Flip between values",
-            modifier = Modifier.size(24.dp)
+            contentDescription = "Flip languages",
+            modifier = Modifier.size(24.dp).clickable(
+                interactionSource = remember { MutableInteractionSource() },
+                indication = ripple(bounded = false),
+                onClick = flipLanguages
+            ),
         )
         Spacer(modifier = Modifier.width(16.dp))
 
@@ -58,7 +65,9 @@ fun LanguageSelectionControl(
             label = targetLanguage?.displayName ?: stringResource(R.string.select_language),
             onSelected = {
                 selectFor(LanguageFor.TARGET)
-            })
+            },
+            modifier = Modifier.weight(1f)
+        )
     }
 }
 

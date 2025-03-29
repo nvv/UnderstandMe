@@ -1,8 +1,6 @@
 package com.vnamashko.understandme
 
-import android.content.Intent
 import android.os.Bundle
-import android.speech.tts.TextToSpeech
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
@@ -82,6 +80,9 @@ class MainActivity : ComponentActivity() {
                         selectForTarget = { target ->
                             selectFor = target
                             showBottomSheet = true
+                        },
+                        flipLanguages = {
+                            viewModel.flipLanguages()
                         },
                         sourceLanguage = sourceLanguage,
                         targetLanguage = targetLanguage,
