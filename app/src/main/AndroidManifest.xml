@@ -14,13 +14,16 @@
         android:theme="@style/Theme.UnderstandMe"
         tools:targetApi="31">
         <activity
-            android:name=".MainActivity"
+            android:name=".TranslateActivity"
             android:exported="true"
-            android:label="@string/app_name"
             android:theme="@style/Theme.UnderstandMe">
             <intent-filter>
+                <action android:name="android.intent.action.PROCESS_TEXT" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <data android:mimeType="text/plain" />
+            </intent-filter>
+            <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
-
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>

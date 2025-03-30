@@ -56,6 +56,7 @@ import kotlinx.coroutines.flow.debounce
 
 @Composable
 fun TranslationScreen(
+    initialText: String?,
     onTextChanged: (String) -> Unit,
     playbackOriginalText: () -> Unit,
     playbackTranslatedText: () -> Unit,
@@ -77,6 +78,7 @@ fun TranslationScreen(
             }
     ) {
         TranslationInputOutput(
+            initialText = initialText,
             onTextChanged = onTextChanged,
             playbackOriginalText = playbackOriginalText,
             playbackTranslatedText = playbackTranslatedText,
@@ -99,6 +101,7 @@ fun TranslationScreen(
 @OptIn(FlowPreview::class)
 @Composable
 fun TranslationInputOutput(
+    initialText: String?,
     onTextChanged: (String) -> Unit,
     playbackOriginalText: () -> Unit,
     playbackTranslatedText: () -> Unit,
@@ -107,7 +110,7 @@ fun TranslationInputOutput(
     modifier: Modifier = Modifier,
     inputModifier: Modifier = Modifier
 ) {
-    var textToTranslate by remember { mutableStateOf("") }
+    var textToTranslate by remember { mutableStateOf(initialText ?: "") }
     var isPasteAvailable by remember { mutableStateOf(false) }
 
     val clipboardManager = LocalClipboardManager.current

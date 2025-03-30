@@ -1,5 +1,6 @@
 package com.vnamashko.understandme
 
+import android.content.Intent
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -35,7 +36,7 @@ import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.launch
 
 @AndroidEntryPoint
-class MainActivity : ComponentActivity() {
+class TranslateActivity : ComponentActivity() {
     private val viewModel: ViewModel by viewModels()
 
     @OptIn(ExperimentalMaterial3Api::class)
@@ -47,7 +48,6 @@ class MainActivity : ComponentActivity() {
             val languages by viewModel.supportedLanguages.collectAsStateWithLifecycle()
             val sourceLanguage by viewModel.sourceLanguage.collectAsStateWithLifecycle()
             val targetLanguage by viewModel.targetLanguage.collectAsStateWithLifecycle()
-            val downloadedLanguages by viewModel.downloadedLanguages.collectAsStateWithLifecycle()
 
             var selectFor by remember { mutableStateOf<LanguageFor?>(null) }
 
@@ -67,6 +67,7 @@ class MainActivity : ComponentActivity() {
                     modifier = Modifier.fillMaxSize()
                 ) { innerPadding ->
                     TranslationScreen(
+                        initialText = intent.getStringExtra(Intent.EXTRA_PROCESS_TEXT),
                         onTextChanged = {
                             viewModel.translate(it)
                         },
