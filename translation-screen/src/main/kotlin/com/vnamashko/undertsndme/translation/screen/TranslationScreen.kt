@@ -10,9 +10,11 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Close
+import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.HorizontalDivider
@@ -41,10 +43,15 @@ import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.compose.LocalLifecycleOwner
+import androidx.lifecycle.repeatOnLifecycle
 import com.vnamashko.understandme.translation.model.Language
 import com.vnamashko.undertsndme.language.picker.LanguageFor
 import com.vnamashko.undertsndme.language.picker.LanguageSelectionControl
+import com.vnamashko.undertsndme.translation.screen.icons.PasteIcon
 import kotlinx.coroutines.FlowPreview
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.debounce
 
 @Composable
@@ -101,8 +108,17 @@ fun TranslationInputOutput(
     inputModifier: Modifier = Modifier
 ) {
     var textToTranslate by remember { mutableStateOf("") }
+    var isPasteAvailable by remember { mutableStateOf(false) }
 
     val clipboardManager = LocalClipboardManager.current
+    val lifecycleOwner = LocalLifecycleOwner.current
+
+    LaunchedEffect(lifecycleOwner) {
+        lifecycleOwner.lifecycle.repeatOnLifecycle(Lifecycle.State.RESUMED) {
+            delay(100)
+            isPasteAvailable = clipboardManager.hasText()
+        }
+    }
 
     LaunchedEffect(textToTranslate) {
         snapshotFlow { textToTranslate }
@@ -144,6 +160,17 @@ fun TranslationInputOutput(
             textStyle = MaterialTheme.typography.titleLarge,
             modifier = inputModifier
         )
+
+        if (isPasteAvailable && textToTranslate.isEmpty()) {
+            Button(
+                onClick = { textToTranslate = clipboardManager.getText()?.text ?: "" },
+                modifier = Modifier.padding(top = 24.dp, start = 16.dp)
+            ) {
+                Icon(imageVector = PasteIcon, contentDescription = "Paste")
+                Spacer(modifier = Modifier.width(8.dp))
+                Text(stringResource(R.string.paste_from_clipboard))
+            }
+        }
 
         if (translation != null) {
             TextToolbarControl(
