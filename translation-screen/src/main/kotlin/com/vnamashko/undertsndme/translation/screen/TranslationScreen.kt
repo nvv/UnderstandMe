@@ -1,6 +1,7 @@
 package com.vnamashko.undertsndme.translation.screen
 
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -30,18 +31,21 @@ import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalClipboardManager
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import com.vnamashko.undertsndme.language.picker.LanguageSelectionControl
-import com.vnamashko.undertsndme.language.picker.LanguageFor
-import kotlinx.coroutines.flow.debounce
 import com.vnamashko.understandme.translation.model.Language
+import com.vnamashko.undertsndme.language.picker.LanguageFor
+import com.vnamashko.undertsndme.language.picker.LanguageSelectionControl
 import kotlinx.coroutines.FlowPreview
+import kotlinx.coroutines.flow.debounce
 
 @Composable
 fun TranslationScreen(
@@ -56,13 +60,24 @@ fun TranslationScreen(
     error: TranslationError?,
     modifier: Modifier = Modifier
 ) {
-    Column(modifier = modifier.fillMaxSize()) {
+    val focusRequester = remember { FocusRequester() }
+
+    Column(
+        modifier = modifier
+            .fillMaxSize()
+            .pointerInput(Unit) {
+                detectTapGestures(onTap = { _ -> focusRequester.requestFocus() })
+            }
+    ) {
         TranslationInputOutput(
             onTextChanged = onTextChanged,
             playbackOriginalText = playbackOriginalText,
             playbackTranslatedText = playbackTranslatedText,
             translation = translation,
-            error = error
+            error = error,
+            inputModifier = Modifier
+                .fillMaxWidth()
+                .focusRequester(focusRequester)
         )
         Spacer(modifier = Modifier.weight(1f))
         LanguageSelectionControl(
@@ -82,7 +97,8 @@ fun TranslationInputOutput(
     playbackTranslatedText: () -> Unit,
     translation: String?,
     error: TranslationError?,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    inputModifier: Modifier = Modifier
 ) {
     var textToTranslate by remember { mutableStateOf("") }
 
@@ -126,7 +142,7 @@ fun TranslationInputOutput(
                 focusedBorderColor = Color.Transparent,
             ),
             textStyle = MaterialTheme.typography.titleLarge,
-            modifier = Modifier.fillMaxWidth()
+            modifier = inputModifier
         )
 
         if (translation != null) {

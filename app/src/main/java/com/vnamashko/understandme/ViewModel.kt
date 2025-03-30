@@ -2,7 +2,6 @@ package com.vnamashko.understandme
 
 import android.content.res.Resources
 import androidx.lifecycle.viewModelScope
-import com.vnamashko.understandme.coroutines.MainDispatcher
 import com.vnamashko.understandme.network.NetworkConnectionManager
 import com.vnamashko.understandme.settings.SettingsDataStore
 import com.vnamashko.understandme.translation.Translator
