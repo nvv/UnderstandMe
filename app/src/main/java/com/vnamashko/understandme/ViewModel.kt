@@ -68,13 +68,13 @@ class ViewModel @Inject constructor(
     }
 
     fun playbackTranslated() {
-//        if (tts.isLanguageAvailable(_targetLanguage.value?.code ?: "")) {
-        tts.speak(translatedText.value ?: "", _targetLanguage.value?.code)
-//        } else {
-//            viewModelScope.launch {
-//                _effect.emit(UiEffect.RequestLanguageDownload)
-//            }
-//        }
+        if (tts.isLanguageAvailable(_targetLanguage.value?.code ?: "")) {
+            tts.speak(translatedText.value ?: "", _targetLanguage.value?.code)
+        } else {
+            viewModelScope.launch {
+                _effect.emit(UiEffect.RequestLanguageDownload)
+            }
+        }
     }
 
     fun selectSourceLanguage(language: Language) {
@@ -153,9 +153,7 @@ class ViewModel @Inject constructor(
 
                     Event.ERROR_TRANSLATING -> _effect.emit(UiEffect.ErrorWhileTranslatingMessage)
                     Event.LOADING_MODEL -> {}
-                    Event.TRANSLATED -> {
-                        _effect.emit(UiEffect.ClearError)
-                    }
+                    Event.TRANSLATED -> _effect.emit(UiEffect.ClearError)
                 }
             }
         }
@@ -163,7 +161,7 @@ class ViewModel @Inject constructor(
 }
 
 sealed class UiEffect {
-    //    data object RequestLanguageDownload : UiEffect()
+    data object RequestLanguageDownload : UiEffect()
     data object ClearError : UiEffect()
     data class LanguageModelDoesNotExists(val error: TranslationError) : UiEffect()
     data object ErrorWhileTranslatingMessage : UiEffect()

@@ -8,8 +8,8 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import java.util.Locale
 import javax.inject.Inject
-import android.os.Bundle
 import android.speech.tts.TextToSpeech.Engine
+import androidx.core.os.bundleOf
 
 interface Tts {
     val isReady: StateFlow<Boolean>
@@ -68,9 +68,7 @@ class TtsImpl @Inject constructor(context: Context) : Tts {
 
             // Speak each sentence with a pause
             sentences.forEachIndexed { index, sentence ->
-                val params = Bundle().apply {
-                    putFloat(Engine.KEY_PARAM_VOLUME, 1.0f)
-                }
+                val params = bundleOf(Engine.KEY_PARAM_VOLUME to 1.0f)
 
                 // Add silence after each sentence except the last one
                 val addPause = index < sentences.size - 1

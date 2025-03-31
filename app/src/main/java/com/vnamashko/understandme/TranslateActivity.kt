@@ -2,6 +2,7 @@ package com.vnamashko.understandme
 
 import android.content.Intent
 import android.os.Bundle
+import android.speech.tts.TextToSpeech
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
@@ -137,11 +138,11 @@ class TranslateActivity : ComponentActivity() {
             LaunchedEffect(Unit) {
                 viewModel.effect.collect { effect ->
                     when (effect) {
-//                        is UiEffect.RequestLanguageDownload -> {
-//                            val intent = Intent(TextToSpeech.Engine.ACTION_INSTALL_TTS_DATA)
-//                            intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK
-//                            startActivity(intent)
-//                        }
+                        is UiEffect.RequestLanguageDownload -> {
+                            val intent = Intent(TextToSpeech.Engine.ACTION_INSTALL_TTS_DATA)
+                            intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK
+                            startActivity(intent)
+                        }
                         is UiEffect.ClearError -> { errorState = null }
 
                         is UiEffect.LanguageModelDoesNotExists -> { errorState = effect.error }
