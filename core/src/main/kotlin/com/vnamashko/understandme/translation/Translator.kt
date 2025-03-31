@@ -116,7 +116,10 @@ class TranslatorImpl @Inject constructor(
             val translated = kotlin.runCatching {
                 Tasks.await(task)
             }
-            translated.getOrNull()
+            translated.getOrNull()?.also {
+                // emit event only when translation was successful
+                _events.emit(Event.TRANSLATED)
+            }
         }
     }.stateIn(externalScope, SharingStarted.Lazily, null)
 

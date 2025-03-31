@@ -52,9 +52,6 @@ class ViewModel @Inject constructor(
     val downloadedLanguages = translator.downloadedModels
 
     fun translate(text: String) {
-        viewModelScope.launch {
-            _effect.emit(UiEffect.ClearError)
-        }
         originalText.value = text
         translator.translate(text)
     }
@@ -156,7 +153,9 @@ class ViewModel @Inject constructor(
 
                     Event.ERROR_TRANSLATING -> _effect.emit(UiEffect.ErrorWhileTranslatingMessage)
                     Event.LOADING_MODEL -> {}
-                    Event.TRANSLATING -> {}
+                    Event.TRANSLATED -> {
+                        _effect.emit(UiEffect.ClearError)
+                    }
                 }
             }
         }
