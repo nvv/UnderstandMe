@@ -1,7 +1,11 @@
 package com.vnamashko.understandme
 
+import android.Manifest
 import android.content.Intent
+import android.content.pm.PackageManager
 import android.os.Bundle
+import android.speech.RecognizerIntent
+import android.speech.SpeechRecognizer
 import android.speech.tts.TextToSpeech
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -25,16 +29,21 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
+import androidx.core.app.ActivityCompat
+import androidx.core.content.ContextCompat
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.vnamashko.understandme.language.picker.R.string.translate_from
 import com.vnamashko.understandme.language.picker.R.string.translate_to
+import com.vnamashko.understandme.stt.SpeechRecognitionListener
 import com.vnamashko.understandme.ui.theme.UnderstandMeTheme
+import com.vnamashko.understandme.utils.getLanguageTag
 import com.vnamashko.undertsndme.language.picker.LanguageFor
 import com.vnamashko.undertsndme.language.picker.LanguagePickerControl
 import com.vnamashko.undertsndme.translation.screen.TranslationError
 import com.vnamashko.undertsndme.translation.screen.TranslationScreen
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.launch
+
 
 @AndroidEntryPoint
 class TranslateActivity : ComponentActivity() {
@@ -43,12 +52,27 @@ class TranslateActivity : ComponentActivity() {
     @OptIn(ExperimentalMaterial3Api::class)
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+
+        val listener: SpeechRecognitionListener?
+
+        val speechRecognizer = if (SpeechRecognizer.isRecognitionAvailable(this)) {
+            listener = SpeechRecognitionListener()
+            SpeechRecognizer.createSpeechRecognizer(this).apply {
+                setRecognitionListener(listener)
+            }
+        } else {
+            listener = null
+            null
+        }
+
         enableEdgeToEdge()
         setContent {
             val value by viewModel.translatedText.collectAsStateWithLifecycle()
             val languages by viewModel.supportedLanguages.collectAsStateWithLifecycle()
             val sourceLanguage by viewModel.sourceLanguage.collectAsStateWithLifecycle()
             val targetLanguage by viewModel.targetLanguage.collectAsStateWithLifecycle()
+            val speechToText by listener?.result?.collectAsStateWithLifecycle()
+                ?: remember { mutableStateOf<String?>(null) }
 
             var selectFor by remember { mutableStateOf<LanguageFor?>(null) }
 
@@ -60,6 +84,7 @@ class TranslateActivity : ComponentActivity() {
             val snackbarHostState = remember { SnackbarHostState() }
             var showBottomSheet by remember { mutableStateOf(false) }
 
+            println(">>>> $speechToText")
             UnderstandMeTheme {
                 Scaffold(
                     snackbarHost = {
@@ -68,7 +93,7 @@ class TranslateActivity : ComponentActivity() {
                     modifier = Modifier.fillMaxSize()
                 ) { innerPadding ->
                     TranslationScreen(
-                        initialText = intent.getStringExtra(Intent.EXTRA_PROCESS_TEXT),
+                        initialText = speechToText ?: intent.getStringExtra(Intent.EXTRA_PROCESS_TEXT),
                         onTextChanged = {
                             viewModel.translate(it)
                         },
@@ -77,6 +102,26 @@ class TranslateActivity : ComponentActivity() {
                         },
                         playbackTranslatedText = {
                             viewModel.playbackTranslated()
+                        },
+                        onSttRequested = {
+                            if (ContextCompat.checkSelfPermission(this, Manifest.permission.RECORD_AUDIO) != PackageManager.PERMISSION_GRANTED) {
+                                ActivityCompat.requestPermissions(this, arrayOf(Manifest.permission.RECORD_AUDIO), 1)
+                            } else {
+                                val recognizerIntent =
+                                    Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH).apply {
+                                        putExtra(
+                                            RecognizerIntent.EXTRA_LANGUAGE_MODEL,
+                                            RecognizerIntent.LANGUAGE_MODEL_FREE_FORM
+                                        )
+                                        putExtra(
+                                            RecognizerIntent.EXTRA_LANGUAGE,
+                                            getLanguageTag(sourceLanguage?.code ?: return@apply)
+                                        )
+                                    }
+
+
+                                speechRecognizer?.startListening(recognizerIntent)
+                            }
                         },
                         translation = value,
                         selectForTarget = { target ->

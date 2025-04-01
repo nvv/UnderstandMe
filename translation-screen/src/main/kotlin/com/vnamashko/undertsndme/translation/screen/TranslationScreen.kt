@@ -1,5 +1,6 @@
 package com.vnamashko.undertsndme.translation.screen
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Box
@@ -10,7 +11,9 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Close
@@ -19,6 +22,7 @@ import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
@@ -49,6 +53,7 @@ import androidx.lifecycle.repeatOnLifecycle
 import com.vnamashko.understandme.translation.model.Language
 import com.vnamashko.undertsndme.language.picker.LanguageFor
 import com.vnamashko.undertsndme.language.picker.LanguageSelectionControl
+import com.vnamashko.undertsndme.translation.screen.icons.MicIcon
 import com.vnamashko.undertsndme.translation.screen.icons.PasteIcon
 import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.delay
@@ -60,6 +65,7 @@ fun TranslationScreen(
     onTextChanged: (String) -> Unit,
     playbackOriginalText: () -> Unit,
     playbackTranslatedText: () -> Unit,
+    onSttRequested: () -> Unit,
     translation: String?,
     targetLanguage: Language?,
     sourceLanguage: Language?,
@@ -95,6 +101,7 @@ fun TranslationScreen(
             selectFor = selectForTarget,
             flipLanguages = flipLanguages
         )
+        MicButton(onClicked = onSttRequested)
     }
 }
 
@@ -129,6 +136,11 @@ fun TranslationInputOutput(
             .collect { text ->
                 onTextChanged(text)
             }
+    }
+
+    LaunchedEffect(initialText) {
+        textToTranslate = initialText ?: ""
+        onTextChanged(textToTranslate)
     }
 
     Column(modifier = modifier.padding(8.dp)) {
@@ -261,6 +273,29 @@ fun ErrorCard(error: TranslationError) {
                     )
                 }
             }
+        }
+    }
+}
+
+@Composable
+fun MicButton(onClicked: () -> Unit, modifier: Modifier = Modifier) {
+    Box(
+        modifier = modifier
+            .fillMaxWidth()
+            .padding(16.dp),
+        contentAlignment = Alignment.Center
+    ) {
+        IconButton(
+            onClick = onClicked,
+            modifier = Modifier
+                .size(72.dp)
+                .background(MaterialTheme.colorScheme.primaryContainer, shape = CircleShape)
+        ) {
+            Icon(
+                imageVector = MicIcon,
+                contentDescription = "Microphone",
+                tint = MaterialTheme.colorScheme.onPrimaryContainer
+            )
         }
     }
 }
