@@ -73,6 +73,8 @@ class TranslateActivity : ComponentActivity() {
             val targetLanguage by viewModel.targetLanguage.collectAsStateWithLifecycle()
             val speechToText by listener?.result?.collectAsStateWithLifecycle()
                 ?: remember { mutableStateOf<String?>(null) }
+            val isSpeechToTextListening by listener?.isListening?.collectAsStateWithLifecycle()
+                ?: remember { mutableStateOf(false) }
 
             var selectFor by remember { mutableStateOf<LanguageFor?>(null) }
 
@@ -84,7 +86,6 @@ class TranslateActivity : ComponentActivity() {
             val snackbarHostState = remember { SnackbarHostState() }
             var showBottomSheet by remember { mutableStateOf(false) }
 
-            println(">>>> $speechToText")
             UnderstandMeTheme {
                 Scaffold(
                     snackbarHost = {
@@ -103,24 +104,28 @@ class TranslateActivity : ComponentActivity() {
                         playbackTranslatedText = {
                             viewModel.playbackTranslated()
                         },
-                        onSttRequested = {
+                        onPlayMicClicked = {
                             if (ContextCompat.checkSelfPermission(this, Manifest.permission.RECORD_AUDIO) != PackageManager.PERMISSION_GRANTED) {
                                 ActivityCompat.requestPermissions(this, arrayOf(Manifest.permission.RECORD_AUDIO), 1)
                             } else {
-                                val recognizerIntent =
-                                    Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH).apply {
-                                        putExtra(
-                                            RecognizerIntent.EXTRA_LANGUAGE_MODEL,
-                                            RecognizerIntent.LANGUAGE_MODEL_FREE_FORM
-                                        )
-                                        putExtra(
-                                            RecognizerIntent.EXTRA_LANGUAGE,
-                                            getLanguageTag(sourceLanguage?.code ?: return@apply)
-                                        )
-                                    }
+                                if (isSpeechToTextListening) {
+                                    speechRecognizer?.stopListening()
+                                } else {
+                                    val recognizerIntent =
+                                        Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH).apply {
+                                            putExtra(
+                                                RecognizerIntent.EXTRA_LANGUAGE_MODEL,
+                                                RecognizerIntent.LANGUAGE_MODEL_FREE_FORM
+                                            )
+                                            putExtra(
+                                                RecognizerIntent.EXTRA_LANGUAGE,
+                                                getLanguageTag(sourceLanguage?.code ?: return@apply)
+                                            )
+                                        }
 
 
-                                speechRecognizer?.startListening(recognizerIntent)
+                                    speechRecognizer?.startListening(recognizerIntent)
+                                }
                             }
                         },
                         translation = value,
@@ -134,6 +139,7 @@ class TranslateActivity : ComponentActivity() {
                         sourceLanguage = sourceLanguage,
                         targetLanguage = targetLanguage,
                         error = errorState,
+                        isSpeechToTextListening = isSpeechToTextListening,
                         modifier = Modifier
                             .padding(innerPadding)
                             .fillMaxWidth()

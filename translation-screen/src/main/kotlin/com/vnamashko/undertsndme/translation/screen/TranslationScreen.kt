@@ -65,12 +65,13 @@ fun TranslationScreen(
     onTextChanged: (String) -> Unit,
     playbackOriginalText: () -> Unit,
     playbackTranslatedText: () -> Unit,
-    onSttRequested: () -> Unit,
+    onPlayMicClicked: () -> Unit,
     translation: String?,
     targetLanguage: Language?,
     sourceLanguage: Language?,
     selectForTarget: (LanguageFor) -> Unit,
     flipLanguages: () -> Unit,
+    isSpeechToTextListening: Boolean,
     error: TranslationError?,
     modifier: Modifier = Modifier
 ) {
@@ -101,7 +102,7 @@ fun TranslationScreen(
             selectFor = selectForTarget,
             flipLanguages = flipLanguages
         )
-        MicButton(onClicked = onSttRequested)
+        MicButton(isSpeechToTextListening = isSpeechToTextListening, onClicked = onPlayMicClicked)
     }
 }
 
@@ -278,7 +279,11 @@ fun ErrorCard(error: TranslationError) {
 }
 
 @Composable
-fun MicButton(onClicked: () -> Unit, modifier: Modifier = Modifier) {
+fun MicButton(
+    isSpeechToTextListening: Boolean,
+    onClicked: () -> Unit,
+    modifier: Modifier = Modifier
+) {
     Box(
         modifier = modifier
             .fillMaxWidth()
@@ -289,12 +294,23 @@ fun MicButton(onClicked: () -> Unit, modifier: Modifier = Modifier) {
             onClick = onClicked,
             modifier = Modifier
                 .size(72.dp)
-                .background(MaterialTheme.colorScheme.primaryContainer, shape = CircleShape)
+                .background(
+                    if (isSpeechToTextListening) {
+                        MaterialTheme.colorScheme.primary
+                    } else {
+                        MaterialTheme.colorScheme.primaryContainer
+                    },
+                    shape = CircleShape
+                )
         ) {
             Icon(
                 imageVector = MicIcon,
                 contentDescription = "Microphone",
-                tint = MaterialTheme.colorScheme.onPrimaryContainer
+                tint = if (isSpeechToTextListening) {
+                    MaterialTheme.colorScheme.onPrimary
+                } else {
+                    MaterialTheme.colorScheme.onPrimaryContainer
+                }
             )
         }
     }
