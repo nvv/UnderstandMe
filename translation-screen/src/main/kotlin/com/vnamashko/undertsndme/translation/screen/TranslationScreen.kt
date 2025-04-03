@@ -56,9 +56,6 @@ import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import androidx.lifecycle.Lifecycle
-import androidx.lifecycle.compose.LocalLifecycleOwner
-import androidx.lifecycle.repeatOnLifecycle
 import com.vnamashko.understandme.translation.model.Language
 import com.vnamashko.undertsndme.language.picker.LanguageFor
 import com.vnamashko.undertsndme.language.picker.LanguageSelectionControl
@@ -66,22 +63,60 @@ import com.vnamashko.undertsndme.translation.screen.icons.MicIcon
 import com.vnamashko.undertsndme.translation.screen.icons.PasteIcon
 import com.vnamashko.undertsndme.translation.screen.icons.StopIcon
 import kotlinx.coroutines.FlowPreview
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.debounce
 
 @Composable
-fun TranslationScreen(
+fun HomeScreen(
+    targetLanguage: Language?,
+    sourceLanguage: Language?,
+    selectForTarget: (LanguageFor) -> Unit,
+    flipLanguages: () -> Unit,
+    isPasteAvailable: Boolean,
+    navigateTo: (screen: Screen) -> Unit,
+    modifier: Modifier = Modifier
+) {
+    Column(
+        modifier = modifier
+            .padding(24.dp)
+            .fillMaxSize()
+            .pointerInput(Unit) {
+                detectTapGestures(onTap = { _ -> navigateTo(Screen.InteractiveTranslate) })
+            }
+    ) {
+
+        Text(
+            stringResource(R.string.enter_text),
+            style = MaterialTheme.typography.titleLarge,
+            modifier = Modifier.padding(16.dp)
+        )
+
+        if (isPasteAvailable) {
+            PasteButton(onClicked = { })
+        }
+
+        Spacer(modifier = Modifier.weight(1f))
+        LanguageSelectionControl(
+            sourceLanguage = sourceLanguage,
+            targetLanguage = targetLanguage,
+            selectFor = selectForTarget,
+            flipLanguages = flipLanguages
+        )
+        MicButton(isSpeechToTextListening = false, onClicked = {})
+    }
+}
+
+@Composable
+fun InteractiveTranslationScreen(
     initialText: String?,
     onTextChanged: (String) -> Unit,
     playbackOriginalText: () -> Unit,
     playbackTranslatedText: () -> Unit,
-    onPlayMicClicked: () -> Unit,
     translation: String?,
     targetLanguage: Language?,
     sourceLanguage: Language?,
     selectForTarget: (LanguageFor) -> Unit,
     flipLanguages: () -> Unit,
-    isSpeechToTextListening: Boolean,
+    isPasteAvailable: Boolean,
     error: TranslationError?,
     modifier: Modifier = Modifier
 ) {
@@ -89,6 +124,7 @@ fun TranslationScreen(
 
     Column(
         modifier = modifier
+            .padding(24.dp)
             .fillMaxSize()
             .pointerInput(Unit) {
                 detectTapGestures(onTap = { _ -> focusRequester.requestFocus() })
@@ -101,6 +137,7 @@ fun TranslationScreen(
             playbackTranslatedText = playbackTranslatedText,
             translation = translation,
             error = error,
+            isPasteAvailable = isPasteAvailable,
             inputModifier = Modifier
                 .fillMaxWidth()
                 .focusRequester(focusRequester)
@@ -112,7 +149,6 @@ fun TranslationScreen(
             selectFor = selectForTarget,
             flipLanguages = flipLanguages
         )
-        MicButton(isSpeechToTextListening = isSpeechToTextListening, onClicked = onPlayMicClicked)
     }
 }
 
@@ -125,21 +161,13 @@ fun TranslationInputOutput(
     playbackTranslatedText: () -> Unit,
     translation: String?,
     error: TranslationError?,
+    isPasteAvailable: Boolean,
     modifier: Modifier = Modifier,
     inputModifier: Modifier = Modifier
 ) {
     var textToTranslate by remember { mutableStateOf(initialText ?: "") }
-    var isPasteAvailable by remember { mutableStateOf(false) }
 
     val clipboardManager = LocalClipboardManager.current
-    val lifecycleOwner = LocalLifecycleOwner.current
-
-    LaunchedEffect(lifecycleOwner) {
-        lifecycleOwner.lifecycle.repeatOnLifecycle(Lifecycle.State.RESUMED) {
-            delay(100)
-            isPasteAvailable = clipboardManager.hasText()
-        }
-    }
 
     LaunchedEffect(textToTranslate) {
         snapshotFlow { textToTranslate }
@@ -154,11 +182,10 @@ fun TranslationInputOutput(
         onTextChanged(textToTranslate)
     }
 
-    Column(modifier = modifier.padding(8.dp)) {
-        Row(modifier = Modifier.height(24.dp)) {
-            Spacer(Modifier.weight(1f))
-
-            if (translation != null) {
+    Column {
+        if (translation != null) {
+            Row(modifier = Modifier.height(24.dp)) {
+                Spacer(Modifier.weight(1f))
                 Icon(
                     imageVector = Icons.Default.Close,
                     contentDescription = "Clear",
@@ -188,14 +215,7 @@ fun TranslationInputOutput(
         )
 
         if (isPasteAvailable && textToTranslate.isEmpty()) {
-            Button(
-                onClick = { textToTranslate = clipboardManager.getText()?.text ?: "" },
-                modifier = Modifier.padding(top = 24.dp, start = 16.dp)
-            ) {
-                Icon(imageVector = PasteIcon, contentDescription = "Paste")
-                Spacer(modifier = Modifier.width(8.dp))
-                Text(stringResource(R.string.paste_from_clipboard))
-            }
+            PasteButton(onClicked = { textToTranslate = clipboardManager.getText()?.text ?: "" })
         }
 
         if (translation != null) {
@@ -244,6 +264,18 @@ fun TranslationInputOutput(
             }
         }
 
+    }
+}
+
+@Composable
+fun PasteButton(onClicked: () -> Unit, modifier: Modifier = Modifier) {
+    Button(
+        onClick = onClicked,
+        modifier = modifier.padding(top = 24.dp, start = 16.dp)
+    ) {
+        Icon(imageVector = PasteIcon, contentDescription = "Paste")
+        Spacer(modifier = Modifier.width(8.dp))
+        Text(stringResource(R.string.paste_from_clipboard))
     }
 }
 
@@ -383,6 +415,12 @@ data class TranslationError(
     val actionText: String?,
     val onActionClick: (() -> Unit)?
 )
+
+sealed class Screen(val route: String) {
+    data object Home : Screen("home")
+    data object InteractiveTranslate : Screen("interactiveTranslate")
+    data object Listen : Screen("listen")
+}
 
 @Preview(showBackground = true)
 @Composable

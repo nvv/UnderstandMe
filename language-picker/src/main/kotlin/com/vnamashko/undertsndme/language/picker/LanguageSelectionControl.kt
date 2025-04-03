@@ -38,7 +38,7 @@ fun LanguageSelectionControl(
     Row(
         modifier = modifier
             .fillMaxWidth()
-            .padding(vertical = 12.dp, horizontal = 32.dp),
+            .padding(12.dp),
         horizontalArrangement = Arrangement.Absolute.Center,
         verticalAlignment = Alignment.CenterVertically
     ) {
