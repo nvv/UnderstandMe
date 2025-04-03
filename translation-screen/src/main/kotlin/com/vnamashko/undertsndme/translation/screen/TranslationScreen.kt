@@ -51,6 +51,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalClipboardManager
+import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.style.TextAlign
@@ -120,15 +121,10 @@ fun InteractiveTranslationScreen(
     error: TranslationError?,
     modifier: Modifier = Modifier
 ) {
-    val focusRequester = remember { FocusRequester() }
-
     Column(
         modifier = modifier
             .padding(24.dp)
             .fillMaxSize()
-            .pointerInput(Unit) {
-                detectTapGestures(onTap = { _ -> focusRequester.requestFocus() })
-            }
     ) {
         TranslationInputOutput(
             initialText = initialText,
@@ -137,10 +133,7 @@ fun InteractiveTranslationScreen(
             playbackTranslatedText = playbackTranslatedText,
             translation = translation,
             error = error,
-            isPasteAvailable = isPasteAvailable,
-            inputModifier = Modifier
-                .fillMaxWidth()
-                .focusRequester(focusRequester)
+            isPasteAvailable = isPasteAvailable
         )
         Spacer(modifier = Modifier.weight(1f))
         LanguageSelectionControl(
@@ -162,11 +155,12 @@ fun TranslationInputOutput(
     translation: String?,
     error: TranslationError?,
     isPasteAvailable: Boolean,
-    modifier: Modifier = Modifier,
-    inputModifier: Modifier = Modifier
+    modifier: Modifier = Modifier
 ) {
     var textToTranslate by remember { mutableStateOf(initialText ?: "") }
 
+    val focusRequester = remember { FocusRequester() }
+    val keyboardController = LocalSoftwareKeyboardController.current
     val clipboardManager = LocalClipboardManager.current
 
     LaunchedEffect(textToTranslate) {
@@ -182,9 +176,14 @@ fun TranslationInputOutput(
         onTextChanged(textToTranslate)
     }
 
+    LaunchedEffect(Unit) {
+        focusRequester.requestFocus()
+        keyboardController?.show()
+    }
+
     Column {
         if (translation != null) {
-            Row(modifier = Modifier.height(24.dp)) {
+            Row(modifier = modifier.height(24.dp)) {
                 Spacer(Modifier.weight(1f))
                 Icon(
                     imageVector = Icons.Default.Close,
@@ -211,7 +210,7 @@ fun TranslationInputOutput(
                 focusedBorderColor = Color.Transparent,
             ),
             textStyle = MaterialTheme.typography.titleLarge,
-            modifier = inputModifier
+            modifier = Modifier.focusRequester(focusRequester)
         )
 
         if (isPasteAvailable && textToTranslate.isEmpty()) {
