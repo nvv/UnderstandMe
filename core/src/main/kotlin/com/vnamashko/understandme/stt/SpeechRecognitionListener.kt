@@ -33,6 +33,7 @@ class SpeechRecognitionListener: RecognitionListener {
     }
 
     override fun onError(error: Int) {
+        _isListening.value = false
     }
 
     override fun onResults(results: Bundle?) {
