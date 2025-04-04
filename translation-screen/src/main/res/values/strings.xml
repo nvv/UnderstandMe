@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="enter_text">Enter text</string>
+    <string name="speak">Speak…</string>
     <string name="paste_from_clipboard">Paste</string>
 </resources>

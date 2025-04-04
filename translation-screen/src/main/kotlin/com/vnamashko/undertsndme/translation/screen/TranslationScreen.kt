@@ -74,6 +74,7 @@ fun HomeScreen(
     flipLanguages: () -> Unit,
     isPasteAvailable: Boolean,
     navigateTo: (screen: Screen) -> Unit,
+    listenButtonClicked: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     Column(
@@ -84,7 +85,6 @@ fun HomeScreen(
                 detectTapGestures(onTap = { _ -> navigateTo(Screen.InteractiveTranslate) })
             }
     ) {
-
         Text(
             stringResource(R.string.enter_text),
             style = MaterialTheme.typography.titleLarge,
@@ -102,7 +102,7 @@ fun HomeScreen(
             selectFor = selectForTarget,
             flipLanguages = flipLanguages
         )
-        MicButton(isSpeechToTextListening = false, onClicked = {})
+        MicButton(isSpeechToTextListening = false, onClicked = listenButtonClicked)
     }
 }
 
@@ -145,6 +145,104 @@ fun InteractiveTranslationScreen(
     }
 }
 
+@Composable
+fun SpeechListeningScreenScreen(
+    targetLanguage: Language?,
+    sourceLanguage: Language?,
+    selectForTarget: (LanguageFor) -> Unit,
+    flipLanguages: () -> Unit,
+    onStopListening: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    Column(
+        modifier = modifier
+            .padding(24.dp)
+            .fillMaxSize()
+    ) {
+        Text(
+            stringResource(R.string.speak),
+            style = MaterialTheme.typography.titleLarge,
+            modifier = Modifier.padding(16.dp)
+        )
+
+        Spacer(modifier = Modifier.weight(1f))
+        LanguageSelectionControl(
+            sourceLanguage = sourceLanguage,
+            targetLanguage = targetLanguage,
+            selectFor = selectForTarget,
+            flipLanguages = flipLanguages
+        )
+        MicButton(isSpeechToTextListening = true, onClicked = onStopListening)
+    }
+}
+
+@Composable
+fun SpeechListeningResults(
+    text: String,
+    translation: String,
+    targetLanguage: Language?,
+    sourceLanguage: Language?,
+    selectForTarget: (LanguageFor) -> Unit,
+    flipLanguages: () -> Unit,
+    playbackOriginalText: () -> Unit,
+    playbackTranslatedText: () -> Unit,
+    onStartListening: () -> Unit,
+    editText: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    val clipboardManager = LocalClipboardManager.current
+
+    Column(
+        modifier = modifier
+            .padding(24.dp)
+            .fillMaxSize()
+    ) {
+        Text(
+            text = text,
+            style = MaterialTheme.typography.titleLarge.copy(color = MaterialTheme.colorScheme.primary),
+            modifier = modifier.padding(16.dp).pointerInput(Unit) {
+                detectTapGestures(onTap = { _ -> editText() })
+            }
+        )
+
+        TextToolbarControl(
+            onPlaybackClicked = playbackOriginalText,
+            onCopyClicked = { clipboardManager.setText(AnnotatedString(text)) },
+            tint = MaterialTheme.colorScheme.onSurface,
+            modifier = Modifier.padding(bottom = 12.dp)
+        )
+
+        Box(modifier = Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
+            HorizontalDivider(
+                color = MaterialTheme.colorScheme.primary,
+                thickness = 1.5.dp,
+                modifier = Modifier.fillMaxWidth(0.5f)
+            )
+        }
+
+        Text(
+            text = translation,
+            style = MaterialTheme.typography.titleLarge.copy(color = MaterialTheme.colorScheme.primary),
+            modifier = modifier.padding(16.dp)
+        )
+
+        TextToolbarControl(
+            onPlaybackClicked = playbackTranslatedText,
+            onCopyClicked = { clipboardManager.setText(AnnotatedString(translation)) },
+            tint = MaterialTheme.colorScheme.primary
+        )
+
+        Spacer(modifier = Modifier.weight(1f))
+        LanguageSelectionControl(
+            sourceLanguage = sourceLanguage,
+            targetLanguage = targetLanguage,
+            selectFor = selectForTarget,
+            flipLanguages = flipLanguages
+        )
+        MicButton(isSpeechToTextListening = false, onClicked = onStartListening)
+    }
+}
+
 @OptIn(FlowPreview::class)
 @Composable
 fun TranslationInputOutput(
@@ -182,20 +280,6 @@ fun TranslationInputOutput(
     }
 
     Column {
-        if (translation != null) {
-            Row(modifier = modifier.height(24.dp)) {
-                Spacer(Modifier.weight(1f))
-                Icon(
-                    imageVector = Icons.Default.Close,
-                    contentDescription = "Clear",
-                    modifier = Modifier.clickable {
-                        textToTranslate = ""
-                        onTextChanged("")
-                    }
-                )
-            }
-        }
-
         OutlinedTextField(
             value = textToTranslate,
             placeholder = {
@@ -419,6 +503,7 @@ sealed class Screen(val route: String) {
     data object Home : Screen("home")
     data object InteractiveTranslate : Screen("interactiveTranslate")
     data object Listen : Screen("listen")
+    data object ListenResults : Screen("listenResults")
 }
 
 @Preview(showBackground = true)

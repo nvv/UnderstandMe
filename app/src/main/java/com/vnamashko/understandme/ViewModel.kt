@@ -35,7 +35,8 @@ class ViewModel @Inject constructor(
     private val _effect = MutableSharedFlow<UiEffect>()
     val effect = _effect.asSharedFlow()
 
-    private val originalText: MutableStateFlow<String> = MutableStateFlow("")
+    private val _originalText: MutableStateFlow<String> = MutableStateFlow("")
+    val originalText: StateFlow<String> = _originalText.asStateFlow()
     val translatedText: StateFlow<String?> = translator.translatedText
 
     private val _sourceLanguage = MutableStateFlow<Language?>(null)
@@ -52,7 +53,7 @@ class ViewModel @Inject constructor(
     val downloadedLanguages = translator.downloadedModels
 
     fun translate(text: String) {
-        originalText.value = text
+        _originalText.value = text
         translator.translate(text)
     }
 
@@ -64,7 +65,7 @@ class ViewModel @Inject constructor(
     }
 
     fun playbackOriginal() {
-        tts.speak(originalText.value, _sourceLanguage.value?.code)
+        tts.speak(_originalText.value, _sourceLanguage.value?.code)
     }
 
     fun playbackTranslated() {
