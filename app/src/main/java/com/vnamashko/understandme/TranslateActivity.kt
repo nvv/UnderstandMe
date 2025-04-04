@@ -71,6 +71,7 @@ import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.filter
 import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
@@ -190,8 +191,12 @@ class TranslateActivity : ComponentActivity() {
                                 sourceLanguage = sourceLanguage,
                                 targetLanguage = targetLanguage,
                                 isPasteAvailable = isPasteAvailable,
-                                navigateTo = { screen ->
-                                    navController.navigate(screen.route)
+                                goToInteractiveTranslation = {
+                                    navController.navigate(Screen.InteractiveTranslate.route)
+                                },
+                                pasteToInteractiveTranslation = {
+                                    viewModel.translate(clipboardManager.getText()?.text ?: "")
+                                    navController.navigate(Screen.InteractiveTranslate.route)
                                 },
                                 listenButtonClicked = {
                                     if (ContextCompat.checkSelfPermission(this@TranslateActivity, Manifest.permission.RECORD_AUDIO) != PackageManager.PERMISSION_GRANTED) {
@@ -364,6 +369,12 @@ class TranslateActivity : ComponentActivity() {
                         navController.popBackStack()
                         navController.navigate(Screen.ListenResults.route)
                     }
+                }
+            }
+
+            LaunchedEffect(Unit) {
+                navController.currentBackStackEntryFlow.filter { it.destination.route == Screen.Home.route }.collect {
+                    viewModel.translate("")
                 }
             }
         }

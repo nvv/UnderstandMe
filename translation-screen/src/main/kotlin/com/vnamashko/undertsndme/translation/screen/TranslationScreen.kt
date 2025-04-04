@@ -73,7 +73,8 @@ fun HomeScreen(
     selectForTarget: (LanguageFor) -> Unit,
     flipLanguages: () -> Unit,
     isPasteAvailable: Boolean,
-    navigateTo: (screen: Screen) -> Unit,
+    goToInteractiveTranslation: () -> Unit,
+    pasteToInteractiveTranslation: () -> Unit,
     listenButtonClicked: () -> Unit,
     modifier: Modifier = Modifier
 ) {
@@ -82,7 +83,7 @@ fun HomeScreen(
             .padding(24.dp)
             .fillMaxSize()
             .pointerInput(Unit) {
-                detectTapGestures(onTap = { _ -> navigateTo(Screen.InteractiveTranslate) })
+                detectTapGestures(onTap = { _ -> goToInteractiveTranslation() })
             }
     ) {
         Text(
@@ -92,7 +93,7 @@ fun HomeScreen(
         )
 
         if (isPasteAvailable) {
-            PasteButton(onClicked = { })
+            PasteButton(onClicked = pasteToInteractiveTranslation)
         }
 
         Spacer(modifier = Modifier.weight(1f))
