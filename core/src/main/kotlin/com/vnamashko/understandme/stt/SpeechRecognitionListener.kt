@@ -3,8 +3,11 @@ package com.vnamashko.understandme.stt
 import android.os.Bundle
 import android.speech.RecognitionListener
 import android.speech.SpeechRecognizer
+import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
 
 class SpeechRecognitionListener: RecognitionListener {
@@ -12,11 +15,11 @@ class SpeechRecognitionListener: RecognitionListener {
     private val _result = MutableStateFlow<String?>(null)
     val result: StateFlow<String?> = _result.asStateFlow()
 
-    private val _isListening = MutableStateFlow(false)
-    val isListening: StateFlow<Boolean> = _isListening.asStateFlow()
+    private val _isListening = MutableSharedFlow<Boolean>(1)
+    val isListening: SharedFlow<Boolean> = _isListening.asSharedFlow()
 
     override fun onReadyForSpeech(params: Bundle?) {
-        _isListening.value = true
+        _isListening.tryEmit(true)
     }
 
     override fun onBeginningOfSpeech() {
@@ -29,15 +32,15 @@ class SpeechRecognitionListener: RecognitionListener {
     }
 
     override fun onEndOfSpeech() {
-        _isListening.value = false
+        _isListening.tryEmit(false)
     }
 
     override fun onError(error: Int) {
-        _isListening.value = false
+        _isListening.tryEmit(false)
     }
 
     override fun onResults(results: Bundle?) {
-        _isListening.value = false
+        _isListening.tryEmit(false)
         _result.value = results?.getStringArrayList(SpeechRecognizer.RESULTS_RECOGNITION)
             ?.joinToString(separator = ". ")
     }
