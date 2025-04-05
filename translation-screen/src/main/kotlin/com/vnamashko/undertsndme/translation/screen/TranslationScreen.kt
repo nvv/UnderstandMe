@@ -352,7 +352,7 @@ fun PasteButton(onClicked: () -> Unit, modifier: Modifier = Modifier) {
         onClick = onClicked,
         modifier = modifier.padding(top = 24.dp, start = 16.dp)
     ) {
-        Icon(painter = painterResource(R.drawable.paste), contentDescription = "Paste")
+        Icon(painter = painterResource(R.drawable.paste), contentDescription = "Paste", modifier = Modifier.size(16.dp))
         Spacer(modifier = Modifier.width(8.dp))
         Text(stringResource(R.string.paste_from_clipboard))
     }

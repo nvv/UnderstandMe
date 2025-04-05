@@ -55,7 +55,7 @@ fun LanguageSelectionControl(
         Icon(
             painter = painterResource(R.drawable.swap),
             contentDescription = "Flip languages",
-            modifier = Modifier.size(24.dp).clickable(
+            modifier = Modifier.size(20.dp).clickable(
                 interactionSource = remember { MutableInteractionSource() },
                 indication = ripple(bounded = false),
                 onClick = flipLanguages
