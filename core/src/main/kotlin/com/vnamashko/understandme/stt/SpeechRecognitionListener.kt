@@ -3,24 +3,17 @@ package com.vnamashko.understandme.stt
 import android.os.Bundle
 import android.speech.RecognitionListener
 import android.speech.SpeechRecognizer
-import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
 
 class SpeechRecognitionListener: RecognitionListener {
 
-    private val _result = MutableStateFlow<String?>(null)
-    val result: StateFlow<String?> = _result.asStateFlow()
-
-    private val _isListening = MutableSharedFlow<Boolean>(1)
-    val isListening: SharedFlow<Boolean> = _isListening.asSharedFlow()
+    private val _result = MutableStateFlow<RecognitionResult?>(null)
+    val result: StateFlow<RecognitionResult?> = _result.asStateFlow()
 
     override fun onReadyForSpeech(params: Bundle?) {
-        _isListening.tryEmit(true)
-        _result.value = null
+        _result.tryEmit(RecognitionResult.Listening)
     }
 
     override fun onBeginningOfSpeech() {
@@ -33,17 +26,19 @@ class SpeechRecognitionListener: RecognitionListener {
     }
 
     override fun onEndOfSpeech() {
-        _isListening.tryEmit(false)
     }
 
     override fun onError(error: Int) {
-        _isListening.tryEmit(false)
+        _result.tryEmit(RecognitionResult.Finished(null))
     }
 
     override fun onResults(results: Bundle?) {
-        _isListening.tryEmit(false)
-        _result.value = results?.getStringArrayList(SpeechRecognizer.RESULTS_RECOGNITION)
-            ?.joinToString(separator = ". ")
+        _result.tryEmit(
+            RecognitionResult.Finished(
+                results?.getStringArrayList(SpeechRecognizer.RESULTS_RECOGNITION)
+                    ?.joinToString(separator = ". ")
+            )
+        )
     }
 
     override fun onPartialResults(partialResults: Bundle?) {
@@ -52,4 +47,9 @@ class SpeechRecognitionListener: RecognitionListener {
 
     override fun onEvent(eventType: Int, params: Bundle?) {
     }
+}
+
+sealed interface RecognitionResult {
+    data object Listening: RecognitionResult
+    data class Finished(val text: String?): RecognitionResult
 }

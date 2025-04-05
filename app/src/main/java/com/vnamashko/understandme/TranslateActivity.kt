@@ -55,6 +55,7 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import com.vnamashko.understandme.language.picker.R.string.translate_from
 import com.vnamashko.understandme.language.picker.R.string.translate_to
+import com.vnamashko.understandme.stt.RecognitionResult
 import com.vnamashko.understandme.stt.SpeechRecognitionListener
 import com.vnamashko.understandme.translation.model.Language
 import com.vnamashko.understandme.ui.theme.UnderstandMeTheme
@@ -356,18 +357,20 @@ class TranslateActivity : ComponentActivity() {
             }
 
             LaunchedEffect(Unit) {
-                listener?.result?.filterNotNull()?.collect {
-                    viewModel.translate(text = it)
-                }
-            }
-
-            LaunchedEffect(Unit) {
-                listener?.isListening?.filterNotNull()?.distinctUntilChanged()?.collect {
-                    if (it) {
-                        navController.navigate(Screen.Listen.route)
-                    } else {
-                        navController.popBackStack()
-                        navController.navigate(Screen.ListenResults.route)
+                listener?.result?.filterNotNull()?.distinctUntilChanged()?.collect {
+                    when (it) {
+                        RecognitionResult.Listening -> {
+                            navController.navigate(Screen.Listen.route)
+                        }
+                        is RecognitionResult.Finished -> {
+                            if (it.text != null) {
+                                viewModel.translate(it.text!!)
+                                navController.popBackStack()
+                                navController.navigate(Screen.ListenResults.route)
+                            } else {
+                                navController.popBackStack()
+                            }
+                        }
                     }
                 }
             }
@@ -392,7 +395,6 @@ class TranslateActivity : ComponentActivity() {
                     getLanguageTag(sourceLanguage?.code ?: return@apply)
                 )
             }
-
 
         speechRecognizer?.startListening(recognizerIntent)
     }
