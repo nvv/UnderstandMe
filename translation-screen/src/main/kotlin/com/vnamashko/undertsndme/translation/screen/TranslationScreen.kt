@@ -14,7 +14,6 @@ import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -24,8 +23,6 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Close
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -52,6 +49,7 @@ import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalClipboardManager
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.style.TextAlign
@@ -60,9 +58,6 @@ import androidx.compose.ui.unit.dp
 import com.vnamashko.understandme.translation.model.Language
 import com.vnamashko.undertsndme.language.picker.LanguageFor
 import com.vnamashko.undertsndme.language.picker.LanguageSelectionControl
-import com.vnamashko.undertsndme.translation.screen.icons.MicIcon
-import com.vnamashko.undertsndme.translation.screen.icons.PasteIcon
-import com.vnamashko.undertsndme.translation.screen.icons.StopIcon
 import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.flow.debounce
 
@@ -357,7 +352,7 @@ fun PasteButton(onClicked: () -> Unit, modifier: Modifier = Modifier) {
         onClick = onClicked,
         modifier = modifier.padding(top = 24.dp, start = 16.dp)
     ) {
-        Icon(imageVector = PasteIcon, contentDescription = "Paste")
+        Icon(painter = painterResource(R.drawable.paste), contentDescription = "Paste")
         Spacer(modifier = Modifier.width(8.dp))
         Text(stringResource(R.string.paste_from_clipboard))
     }
@@ -480,7 +475,7 @@ fun MicButton(
         ) {
             Crossfade(targetState = isSpeechToTextListening) { state ->
                 Icon(
-                    imageVector = if (state) StopIcon else MicIcon,
+                    painter = painterResource(if (state) R.drawable.stop else R.drawable.mic),
                     contentDescription = "Microphone",
                     tint = if (isSpeechToTextListening) {
                         MaterialTheme.colorScheme.onPrimary

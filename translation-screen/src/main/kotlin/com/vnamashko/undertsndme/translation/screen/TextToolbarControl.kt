@@ -12,9 +12,8 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
-import com.vnamashko.undertsndme.translation.screen.icons.CopyIcon
-import com.vnamashko.undertsndme.translation.screen.icons.VolumeIcon
 
 @Composable
 fun TextToolbarControl(
@@ -25,10 +24,10 @@ fun TextToolbarControl(
 ) {
     Row(modifier = modifier.padding(horizontal = 16.dp)) {
         Icon(
-            imageVector = VolumeIcon,
+            painter = painterResource(R.drawable.volume),
             contentDescription = "Speak",
             tint = tint,
-            modifier = Modifier.size(24.dp).clickable(
+            modifier = Modifier.size(20.dp).clickable(
                 interactionSource = remember { MutableInteractionSource() },
                 indication = ripple(bounded = false),
                 onClick = onPlaybackClicked
@@ -36,10 +35,10 @@ fun TextToolbarControl(
         )
         Spacer(modifier = Modifier.weight(1f))
         Icon(
-            imageVector = CopyIcon,
+            painter = painterResource(R.drawable.copy),
             contentDescription = "Copy text",
             tint = tint,
-            modifier = Modifier.size(24.dp).clickable(
+            modifier = Modifier.size(20.dp).clickable(
                 interactionSource = remember { MutableInteractionSource() },
                 indication = ripple(bounded = false),
                 onClick = onCopyClicked

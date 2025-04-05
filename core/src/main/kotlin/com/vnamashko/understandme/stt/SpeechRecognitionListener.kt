@@ -20,6 +20,7 @@ class SpeechRecognitionListener: RecognitionListener {
 
     override fun onReadyForSpeech(params: Bundle?) {
         _isListening.tryEmit(true)
+        _result.value = null
     }
 
     override fun onBeginningOfSpeech() {
