@@ -43,7 +43,7 @@ android {
 
 dependencies {
     implementation(project(":language-picker"))
-    implementation(project(":translation-screen"))
+    implementation(project(":translation"))
     implementation(project(":core"))
 
     implementation(libs.hilt.android)

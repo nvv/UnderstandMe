@@ -22,5 +22,5 @@ dependencyResolutionManagement {
 rootProject.name = "Understand Me"
 include(":app")
 include(":core")
-include(":translation-screen")
+include(":translation")
 include(":language-picker")
