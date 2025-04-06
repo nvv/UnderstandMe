@@ -58,11 +58,11 @@ import com.vnamashko.understandme.language.picker.R.string.translate_to
 import com.vnamashko.understandme.stt.RecognitionResult
 import com.vnamashko.understandme.stt.SpeechRecognitionListener
 import com.vnamashko.understandme.translation.model.Language
+import com.vnamashko.understandme.translation.model.Screen
 import com.vnamashko.understandme.ui.theme.UnderstandMeTheme
 import com.vnamashko.understandme.utils.getLanguageTag
 import com.vnamashko.undertsndme.language.picker.LanguageFor
 import com.vnamashko.undertsndme.language.picker.LanguagePickerControl
-import com.vnamashko.undertsndme.translation.screen.Screen
 import com.vnamashko.undertsndme.translation.screen.TranslationError
 import com.vnamashko.undertsndme.translation.screen.HomeScreen
 import com.vnamashko.undertsndme.translation.screen.InteractiveTranslationScreen
