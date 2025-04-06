@@ -36,7 +36,7 @@ class SpeechRecognitionListener: RecognitionListener {
         _result.tryEmit(
             RecognitionResult.Finished(
                 results?.getStringArrayList(SpeechRecognizer.RESULTS_RECOGNITION)
-                    ?.joinToString(separator = ". ")
+                    .takeIf { it?.isNotEmpty() == true }?.get(0)
             )
         )
     }

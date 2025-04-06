@@ -63,16 +63,15 @@ import com.vnamashko.understandme.ui.theme.UnderstandMeTheme
 import com.vnamashko.understandme.utils.getLanguageTag
 import com.vnamashko.undertsndme.language.picker.LanguageFor
 import com.vnamashko.undertsndme.language.picker.LanguagePickerControl
-import com.vnamashko.undertsndme.translation.screen.TranslationError
 import com.vnamashko.undertsndme.translation.screen.HomeScreen
 import com.vnamashko.undertsndme.translation.screen.InteractiveTranslationScreen
-import com.vnamashko.undertsndme.translation.screen.SpeechListeningScreenScreen
 import com.vnamashko.undertsndme.translation.screen.SpeechListeningResults
+import com.vnamashko.undertsndme.translation.screen.SpeechListeningScreenScreen
+import com.vnamashko.undertsndme.translation.screen.TranslationError
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.distinctUntilChanged
-import kotlinx.coroutines.flow.filter
 import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
@@ -82,19 +81,17 @@ import kotlinx.coroutines.launch
 class TranslateActivity : ComponentActivity() {
     private val viewModel: ViewModel by viewModels()
 
+    private var speechRecognizer: SpeechRecognizer? = null
+
+    private var speechRecognitionListener: SpeechRecognitionListener? = null
+
     @OptIn(ExperimentalMaterial3Api::class)
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        val listener: SpeechRecognitionListener?
-
-        val speechRecognizer = if (SpeechRecognizer.isRecognitionAvailable(this)) {
-            listener = SpeechRecognitionListener()
-            SpeechRecognizer.createSpeechRecognizer(this).apply {
-                setRecognitionListener(listener)
-            }
+        speechRecognitionListener = if (SpeechRecognizer.isRecognitionAvailable(this)) {
+            SpeechRecognitionListener()
         } else {
-            listener = null
             null
         }
 
@@ -203,7 +200,7 @@ class TranslateActivity : ComponentActivity() {
                                     if (ContextCompat.checkSelfPermission(this@TranslateActivity, Manifest.permission.RECORD_AUDIO) != PackageManager.PERMISSION_GRANTED) {
                                         ActivityCompat.requestPermissions(this@TranslateActivity, arrayOf(Manifest.permission.RECORD_AUDIO), 1)
                                     } else {
-                                        startListening(sourceLanguage, speechRecognizer)
+                                        startListening(sourceLanguage)
                                     }
                                 },
                                 modifier = Modifier.fillMaxWidth()
@@ -277,7 +274,7 @@ class TranslateActivity : ComponentActivity() {
                                     navController.navigate(Screen.InteractiveTranslate.route)
                                 },
                                 onStartListening = {
-                                    startListening(sourceLanguage, speechRecognizer)
+                                    startListening(sourceLanguage)
                                 }
                             )
                         }
@@ -357,9 +354,12 @@ class TranslateActivity : ComponentActivity() {
             }
 
             LaunchedEffect(Unit) {
-                listener?.result?.filterNotNull()?.distinctUntilChanged()?.collect {
+                speechRecognitionListener?.result?.filterNotNull()?.distinctUntilChanged()?.collect {
                     when (it) {
                         RecognitionResult.Listening -> {
+                            if (navController.currentBackStackEntry?.destination?.route == Screen.ListenResults.route) {
+                                navController.popBackStack()
+                            }
                             navController.navigate(Screen.Listen.route)
                         }
                         is RecognitionResult.Finished -> {
@@ -376,14 +376,21 @@ class TranslateActivity : ComponentActivity() {
             }
 
             LaunchedEffect(Unit) {
-                navController.currentBackStackEntryFlow.filter { it.destination.route == Screen.Home.route }.collect {
-                    viewModel.translate("")
+                navController.currentBackStackEntryFlow.collect { nav ->
+                    if (nav.destination.route == Screen.Home.route) {
+                        viewModel.translate("")
+                    }
+
+                    if (nav.destination.route != Screen.Listen.route) {
+                        speechRecognizer?.destroy()
+                        speechRecognizer = null
+                    }
                 }
             }
         }
     }
 
-    private fun startListening(sourceLanguage: Language?, speechRecognizer: SpeechRecognizer?) {
+    private fun startListening(sourceLanguage: Language?) {
         val recognizerIntent =
             Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH).apply {
                 putExtra(
@@ -396,6 +403,9 @@ class TranslateActivity : ComponentActivity() {
                 )
             }
 
+        speechRecognizer = SpeechRecognizer.createSpeechRecognizer(this).apply {
+            setRecognitionListener(speechRecognitionListener)
+        }
         speechRecognizer?.startListening(recognizerIntent)
     }
 }
