@@ -79,16 +79,24 @@ class ViewModel @Inject constructor(
     }
 
     fun selectSourceLanguage(language: Language) {
-        _sourceLanguage.value = language
-        viewModelScope.launch {
-            dataStore.saveSourceLanguage(language.code)
+        if (language == _targetLanguage.value) {
+            flipLanguages()
+        } else {
+            _sourceLanguage.value = language
+            viewModelScope.launch {
+                dataStore.saveSourceLanguage(language.code)
+            }
         }
     }
 
     fun selectTargetLanguage(language: Language) {
-        _targetLanguage.value = language
-        viewModelScope.launch {
-            dataStore.saveTargetLanguage(language.code)
+        if (language == _sourceLanguage.value) {
+            flipLanguages()
+        } else {
+            _targetLanguage.value = language
+            viewModelScope.launch {
+                dataStore.saveTargetLanguage(language.code)
+            }
         }
     }
 
