@@ -99,14 +99,14 @@ fun ErrorCard(error: TranslationError) {
 fun MicButton(
     isSpeechToTextListening: Boolean,
     onClicked: () -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    isEnabled: Boolean = true,
 ) {
-
     val animatedColor by animateColorAsState(
-        targetValue = if (isSpeechToTextListening) {
-            MaterialTheme.colorScheme.primary
-        } else {
-            MaterialTheme.colorScheme.primaryContainer
+        targetValue = when {
+            !isEnabled -> MaterialTheme.colorScheme.surfaceDim
+            isSpeechToTextListening -> MaterialTheme.colorScheme.primary
+            else -> MaterialTheme.colorScheme.primaryContainer
         },
         label = "BackgroundColorAnimation"
     )
@@ -155,15 +155,17 @@ fun MicButton(
             )
         }
 
+        val clickModifier = Modifier.clickable(
+            onClick = onClicked,
+            indication = null,
+            interactionSource = remember { MutableInteractionSource() }
+        )
+
         Box(
             modifier = Modifier
                 .size(72.dp)
                 .background(animatedColor, shape = CircleShape)
-                .clickable(
-                    onClick = onClicked,
-                    indication = null,
-                    interactionSource = remember { MutableInteractionSource() }
-                ),
+                .then(if (isEnabled) clickModifier else Modifier),
             contentAlignment = Alignment.Center
         ) {
             Crossfade(targetState = isSpeechToTextListening) { state ->

@@ -54,7 +54,11 @@ fun HomeScreen(
             selectFor = selectForTarget,
             flipLanguages = flipLanguages
         )
-        MicButton(isSpeechToTextListening = false, onClicked = listenButtonClicked)
+        MicButton(
+            isSpeechToTextListening = false,
+            isEnabled = targetLanguage != null && sourceLanguage != null,
+            onClicked = listenButtonClicked
+        )
     }
 }
 
