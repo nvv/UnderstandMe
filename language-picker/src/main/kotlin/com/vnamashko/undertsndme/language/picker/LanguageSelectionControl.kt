@@ -26,6 +26,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.vnamashko.understandme.language.picker.R
+import com.vnamashko.understandme.theme.dimens
 import com.vnamashko.understandme.translation.model.Language
 
 @Composable
@@ -88,9 +89,16 @@ fun LanguagePill(label: String, onSelected: () -> Unit, modifier: Modifier = Mod
     ) {
         Box(
             contentAlignment = Alignment.Center,
-            modifier = Modifier.padding(horizontal = 32.dp, vertical = 16.dp)
+            modifier = Modifier.padding(
+                horizontal = MaterialTheme.dimens.languagePillHorizontalPadding,
+                vertical = 16.dp
+            )
         ) {
-            Text(text = label, maxLines = 1, overflow = TextOverflow.Ellipsis)
+            Text(
+                text = label,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis
+            )
         }
     }
 }

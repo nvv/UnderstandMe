@@ -1,4 +1,4 @@
-package com.vnamashko.understandme.ui.theme
+package com.vnamashko.understandme.theme
 
 import androidx.compose.ui.graphics.Color
 

@@ -1,15 +1,19 @@
-package com.vnamashko.understandme.ui.theme
+package com.vnamashko.understandme.theme
 
-import android.app.Activity
 import android.os.Build
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Typography
 import androidx.compose.material3.darkColorScheme
 import androidx.compose.material3.dynamicDarkColorScheme
 import androidx.compose.material3.dynamicLightColorScheme
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.unit.dp
 
 private val DarkColorScheme = darkColorScheme(
     primary = Purple80,
@@ -33,8 +37,20 @@ private val LightColorScheme = lightColorScheme(
     */
 )
 
+class Dimensions(
+    val languagePillHorizontalPadding: Dp,
+)
+
+val smallDimensions = Dimensions(
+    languagePillHorizontalPadding = 8.dp
+)
+
+val largeDimensions = Dimensions(
+    languagePillHorizontalPadding = 16.dp
+)
+
 @Composable
-fun UnderstandMeTheme(
+fun AppTheme(
     darkTheme: Boolean = isSystemInDarkTheme(),
     // Dynamic color is available on Android 12+
     dynamicColor: Boolean = true,
@@ -56,3 +72,10 @@ fun UnderstandMeTheme(
         content = content
     )
 }
+
+val MaterialTheme.dimens : Dimensions
+    @Composable
+    get() {
+        val configuration = LocalConfiguration.current
+        return if (configuration.screenWidthDp <= 360) smallDimensions else largeDimensions
+    }

@@ -57,9 +57,9 @@ import com.vnamashko.understandme.language.picker.R.string.translate_from
 import com.vnamashko.understandme.language.picker.R.string.translate_to
 import com.vnamashko.understandme.stt.RecognitionResult
 import com.vnamashko.understandme.stt.SpeechRecognitionListener
+import com.vnamashko.understandme.theme.AppTheme
 import com.vnamashko.understandme.translation.model.Language
 import com.vnamashko.understandme.translation.model.Screen
-import com.vnamashko.understandme.ui.theme.UnderstandMeTheme
 import com.vnamashko.understandme.utils.getLanguageTag
 import com.vnamashko.undertsndme.language.picker.LanguageFor
 import com.vnamashko.undertsndme.language.picker.LanguagePickerControl
@@ -131,7 +131,7 @@ class TranslateActivity : ComponentActivity() {
                 nav.destination.route == Screen.InteractiveTranslate.route && text.isNotEmpty()
             }.collectAsStateWithLifecycle(false)
 
-            UnderstandMeTheme {
+            AppTheme {
                 Scaffold(
                     snackbarHost = {
                         SnackbarHost(hostState = snackbarHostState)
@@ -139,7 +139,10 @@ class TranslateActivity : ComponentActivity() {
                     topBar = {
                         TopAppBar(
                             title = {
-                                Row(modifier = Modifier.padding(horizontal = 16.dp), verticalAlignment = Alignment.CenterVertically) {
+                                Row(
+                                    modifier = Modifier.padding(horizontal = 16.dp),
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
                                     if (hasClearIcon) {
                                         Spacer(Modifier.weight(1f))
                                         Icon(
@@ -158,7 +161,10 @@ class TranslateActivity : ComponentActivity() {
                             },
                             navigationIcon = {
                                 if (hasBackNavigation) {
-                                    IconButton(onClick = { navController.popBackStack() }, modifier = Modifier.padding(start = 16.dp)) {
+                                    IconButton(
+                                        onClick = { navController.popBackStack() },
+                                        modifier = Modifier.padding(start = 16.dp)
+                                    ) {
                                         Icon(
                                             Icons.AutoMirrored.Default.ArrowBack,
                                             contentDescription = "Back"
@@ -197,8 +203,16 @@ class TranslateActivity : ComponentActivity() {
                                     navController.navigate(Screen.InteractiveTranslate.route)
                                 },
                                 listenButtonClicked = {
-                                    if (ContextCompat.checkSelfPermission(this@TranslateActivity, Manifest.permission.RECORD_AUDIO) != PackageManager.PERMISSION_GRANTED) {
-                                        ActivityCompat.requestPermissions(this@TranslateActivity, arrayOf(Manifest.permission.RECORD_AUDIO), 1)
+                                    if (ContextCompat.checkSelfPermission(
+                                            this@TranslateActivity,
+                                            Manifest.permission.RECORD_AUDIO
+                                        ) != PackageManager.PERMISSION_GRANTED
+                                    ) {
+                                        ActivityCompat.requestPermissions(
+                                            this@TranslateActivity,
+                                            arrayOf(Manifest.permission.RECORD_AUDIO),
+                                            1
+                                        )
                                     } else {
                                         startListening(sourceLanguage)
                                     }
