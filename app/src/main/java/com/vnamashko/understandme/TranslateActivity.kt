@@ -368,7 +368,7 @@ class TranslateActivity : ComponentActivity() {
             }
 
             LaunchedEffect(Unit) {
-                speechRecognitionListener?.result?.filterNotNull()?.distinctUntilChanged()?.collect {
+                speechRecognitionListener?.result?.filterNotNull()?.collect {
                     when (it) {
                         RecognitionResult.Listening -> {
                             if (navController.currentBackStackEntry?.destination?.route == Screen.ListenResults.route) {
@@ -396,6 +396,8 @@ class TranslateActivity : ComponentActivity() {
                     }
 
                     if (nav.destination.route != Screen.Listen.route) {
+                        speechRecognitionListener?.reset()
+                        speechRecognizer?.cancel()
                         speechRecognizer?.destroy()
                         speechRecognizer = null
                     }

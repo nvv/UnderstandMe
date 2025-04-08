@@ -13,7 +13,7 @@ class SpeechRecognitionListener: RecognitionListener {
     val result: StateFlow<RecognitionResult?> = _result.asStateFlow()
 
     override fun onReadyForSpeech(params: Bundle?) {
-        _result.tryEmit(RecognitionResult.Listening)
+        _result.value = RecognitionResult.Listening
     }
 
     override fun onBeginningOfSpeech() {
@@ -33,12 +33,11 @@ class SpeechRecognitionListener: RecognitionListener {
     }
 
     override fun onResults(results: Bundle?) {
-        _result.tryEmit(
+        _result.value =
             RecognitionResult.Finished(
                 results?.getStringArrayList(SpeechRecognizer.RESULTS_RECOGNITION)
                     .takeIf { it?.isNotEmpty() == true }?.get(0)
             )
-        )
     }
 
     override fun onPartialResults(partialResults: Bundle?) {
@@ -46,6 +45,10 @@ class SpeechRecognitionListener: RecognitionListener {
     }
 
     override fun onEvent(eventType: Int, params: Bundle?) {
+    }
+
+    fun reset() {
+        _result.value = null
     }
 }
 
