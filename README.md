@@ -20,15 +20,12 @@ This project serves as an open-source alternative to Google Translate, focusing 
 
 The app is built with modern Android development tools and practices:
 
-- Kotlin as primary language
-- Android Jetpack components
-  - ViewModel for UI logic
-  - Flows for reactive data streams
-  - Hilt for dependency injection
-- ML Kit for offline translation capabilities
+- Kotlin 
+- Android
+- ML Kit 
 - Android Speech Recognition API
 - Android Text-to-Speech Engine
-- Kotlin Coroutines and Flow for asynchronous operations
+- Kotlin Coroutines and Flow
 - Clean Architecture principles
 - MVVM pattern
 
