@@ -13,6 +13,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Done
 import androidx.compose.material.icons.filled.Search
@@ -32,8 +33,11 @@ import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.input.pointer.motionEventSpy
 import androidx.compose.ui.unit.dp
 import com.vnamashko.understandme.translation.model.Language
+import com.vnamashko.understandme.translation.model.LanguageModel
+import kotlinx.collections.immutable.ImmutableList
 import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.flow.debounce
 import kotlinx.coroutines.launch
@@ -42,12 +46,12 @@ import kotlinx.coroutines.launch
 @Composable
 fun LanguagePickerControl(
     selectedLanguage: Language?,
-    supportedLanguages: List<Language>,
+    supportedModels: ImmutableList<LanguageModel>,
     onSelect: (Language) -> Unit,
     searchTitle: String,
     modifier: Modifier = Modifier
 ) {
-    val selectedIndex = supportedLanguages.indexOf(selectedLanguage)
+    val selectedIndex = supportedModels.indexOfFirst { it.language == selectedLanguage }
 
     val listState = rememberLazyListState()
     val coroutineScope = rememberCoroutineScope()
@@ -55,15 +59,15 @@ fun LanguagePickerControl(
     var isSearching by remember { mutableStateOf(false) }
     var searchQuery by remember { mutableStateOf("") }
 
-    var filteredLanguages by remember { mutableStateOf(supportedLanguages) }
+    var filteredLanguages by remember { mutableStateOf<List<LanguageModel>>(supportedModels) }
 
     LaunchedEffect(searchQuery) {
         snapshotFlow { searchQuery }
             .debounce(100)
             .collect { text ->
-                filteredLanguages = supportedLanguages.filter { language ->
-                    language.displayName.lowercase().contains(text.lowercase()) ||
-                    language.code.lowercase().contains(text.lowercase())
+                filteredLanguages = supportedModels.filter { model ->
+                    model.language.displayName.lowercase().contains(text.lowercase()) ||
+                            model.language.code.lowercase().contains(text.lowercase())
                 }
             }
     }
@@ -126,9 +130,9 @@ fun LanguagePickerControl(
         LazyColumn(state = listState) {
             items(
                 items = filteredLanguages,
-                key = { language -> language.code }
-            ) { language ->
-                LanguageRow(language, language == selectedLanguage, onSelect)
+                key = { model -> model.language.code }
+            ) { model ->
+                LanguageRow(model, model.language == selectedLanguage, onSelect)
             }
         }
     }
@@ -145,7 +149,7 @@ fun LanguagePickerControl(
 
 @Composable
 private fun LanguageRow(
-    language: Language,
+    model: LanguageModel,
     isSelected: Boolean,
     onSelect: (Language) -> Unit,
     modifier: Modifier = Modifier
@@ -153,7 +157,7 @@ private fun LanguageRow(
     Row(
         modifier = modifier
             .fillMaxWidth()
-            .clickable { onSelect(language) }
+            .clickable { onSelect(model.language) }
             .padding(16.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
@@ -168,8 +172,18 @@ private fun LanguageRow(
         }
 
         Text(
-            text = language.displayName,
+            text = model.language.displayName,
             style = MaterialTheme.typography.bodyLarge
         )
+
+        if (model.isDownloaded) {
+            Spacer(modifier = Modifier.weight(1f))
+
+            Icon(
+                imageVector = Icons.Filled.CheckCircle,
+                contentDescription = "Downloaded",
+                modifier = Modifier.size(24.dp)
+            )
+        }
     }
 }

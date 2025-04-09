@@ -7,9 +7,12 @@ import com.vnamashko.understandme.settings.SettingsDataStore
 import com.vnamashko.understandme.translation.Translator
 import com.vnamashko.understandme.translation.model.Event
 import com.vnamashko.understandme.translation.model.Language
+import com.vnamashko.understandme.translation.model.LanguageModel
 import com.vnamashko.understandme.tts.Tts
 import com.vnamashko.undertsndme.translation.screen.TranslationError
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.collections.immutable.persistentListOf
+import kotlinx.collections.immutable.toImmutableList
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
@@ -18,7 +21,7 @@ import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.flow.firstOrNull
-import kotlinx.coroutines.flow.flowOf
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import javax.inject.Inject
@@ -44,13 +47,18 @@ class ViewModel @Inject constructor(
     private val _targetLanguage = MutableStateFlow<Language?>(null)
     val targetLanguage = _targetLanguage.asStateFlow()
 
-    val supportedLanguages = flowOf(translator.supportedLanguages).stateIn(
+    val supportedModels = translator.downloadedModels.map { downloaded ->
+        translator.supportedLanguages.map {
+            LanguageModel(
+                language = it,
+                isDownloaded = downloaded.contains(it.code)
+            )
+        }.toImmutableList()
+    }.stateIn(
         viewModelScope,
         SharingStarted.Lazily,
-        emptyList()
+        persistentListOf()
     )
-
-    val downloadedLanguages = translator.downloadedModels
 
     fun translate(text: String) {
         _originalText.value = text

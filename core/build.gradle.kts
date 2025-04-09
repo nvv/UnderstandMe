@@ -43,7 +43,7 @@ dependencies {
     implementation(libs.androidx.appcompat)
     implementation(libs.material)
     implementation(libs.androidx.datastore)
-
+    implementation(libs.immutable.collections)
     implementation(libs.hilt.android)
     kapt(libs.hilt.compiler)
 
