@@ -19,9 +19,9 @@ import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.flow.firstOrNull
-import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import javax.inject.Inject
@@ -47,22 +47,35 @@ class ViewModel @Inject constructor(
     private val _targetLanguage = MutableStateFlow<Language?>(null)
     val targetLanguage = _targetLanguage.asStateFlow()
 
-    val supportedModels = translator.downloadedModels.map { downloaded ->
-        translator.supportedLanguages.map {
-            LanguageModel(
-                language = it,
-                isDownloaded = downloaded.contains(it.code)
-            )
-        }.toImmutableList()
-    }.stateIn(
-        viewModelScope,
-        SharingStarted.Lazily,
-        persistentListOf()
-    )
+    val supportedModels =
+        combine(
+            translator.downloadedModels,
+            translator.downloadingModels
+        ) { downloaded, downloading ->
+            translator.supportedLanguages.map {
+                LanguageModel(
+                    language = it,
+                    isDownloaded = downloaded.contains(it.code),
+                    isDownloading = downloading.contains(it.code)
+                )
+            }.toImmutableList()
+        }.stateIn(
+            viewModelScope,
+            SharingStarted.Lazily,
+            persistentListOf()
+        )
 
     fun translate(text: String) {
         _originalText.value = text
         translator.translate(text)
+    }
+
+    fun deleteModelForLanguage(language: Language) {
+        translator.deleteModel(language.code)
+    }
+
+    fun downloadModelForLanguage(language: Language) {
+        translator.downloadModel(language.code)
     }
 
     private fun retryTranslate() {
@@ -169,7 +182,6 @@ class ViewModel @Inject constructor(
                     )
 
                     Event.ERROR_TRANSLATING -> _effect.emit(UiEffect.ErrorWhileTranslatingMessage)
-                    Event.LOADING_MODEL -> {}
                     Event.TRANSLATED -> _effect.emit(UiEffect.ClearError)
                 }
             }

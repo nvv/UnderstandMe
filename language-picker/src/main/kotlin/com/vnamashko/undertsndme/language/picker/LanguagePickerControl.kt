@@ -1,6 +1,7 @@
 package com.vnamashko.undertsndme.language.picker
 
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -17,11 +18,13 @@ import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Done
 import androidx.compose.material.icons.filled.Search
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
+import androidx.compose.material3.ripple
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -33,8 +36,9 @@ import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.input.pointer.motionEventSpy
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
+import com.vnamashko.understandme.language.picker.R
 import com.vnamashko.understandme.translation.model.Language
 import com.vnamashko.understandme.translation.model.LanguageModel
 import kotlinx.collections.immutable.ImmutableList
@@ -48,6 +52,8 @@ fun LanguagePickerControl(
     selectedLanguage: Language?,
     supportedModels: ImmutableList<LanguageModel>,
     onSelect: (Language) -> Unit,
+    onDownloadLanguageModel: (Language) -> Unit,
+    onDeleteLanguageModel: (Language) -> Unit,
     searchTitle: String,
     modifier: Modifier = Modifier
 ) {
@@ -60,6 +66,10 @@ fun LanguagePickerControl(
     var searchQuery by remember { mutableStateOf("") }
 
     var filteredLanguages by remember { mutableStateOf<List<LanguageModel>>(supportedModels) }
+
+    LaunchedEffect(supportedModels) {
+        filteredLanguages = supportedModels
+    }
 
     LaunchedEffect(searchQuery) {
         snapshotFlow { searchQuery }
@@ -132,7 +142,18 @@ fun LanguagePickerControl(
                 items = filteredLanguages,
                 key = { model -> model.language.code }
             ) { model ->
-                LanguageRow(model, model.language == selectedLanguage, onSelect)
+                LanguageRow(
+                    model =  model,
+                    isSelected = model.language == selectedLanguage,
+                    onSelect = onSelect,
+                    onAction = {
+                        if (model.isDownloaded) {
+                            onDeleteLanguageModel(model.language)
+                        } else {
+                            onDownloadLanguageModel(model.language)
+                        }
+                    },
+                )
             }
         }
     }
@@ -152,6 +173,7 @@ private fun LanguageRow(
     model: LanguageModel,
     isSelected: Boolean,
     onSelect: (Language) -> Unit,
+    onAction: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     Row(
@@ -176,14 +198,37 @@ private fun LanguageRow(
             style = MaterialTheme.typography.bodyLarge
         )
 
-        if (model.isDownloaded) {
-            Spacer(modifier = Modifier.weight(1f))
+        Spacer(modifier = Modifier.weight(1f))
 
-            Icon(
-                imageVector = Icons.Filled.CheckCircle,
-                contentDescription = "Downloaded",
-                modifier = Modifier.size(24.dp)
-            )
+        when {
+            model.isDownloaded -> {
+                Icon(
+                    imageVector = Icons.Filled.CheckCircle,
+                    contentDescription = "Downloaded",
+                    modifier = Modifier.size(24.dp).clickable(
+                        interactionSource = remember { MutableInteractionSource() },
+                        indication = ripple(bounded = false),
+                        onClick = onAction
+                    )
+                )
+            }
+            model.isDownloading -> {
+                CircularProgressIndicator(
+                    modifier = Modifier.size(24.dp).padding(2.dp),
+                    strokeWidth = 2.dp
+                )
+            }
+            else -> {
+                Icon(
+                    painter = painterResource(R.drawable.download),
+                    contentDescription = "Download",
+                    modifier = Modifier.size(24.dp).clickable(
+                        interactionSource = remember { MutableInteractionSource() },
+                        indication = ripple(bounded = false),
+                        onClick = onAction
+                    )
+                )
+            }
         }
     }
 }

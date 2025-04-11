@@ -4,4 +4,9 @@
     <string name="select_language">Select Language</string>
     <string name="translate_to">Translate To</string>
     <string name="translate_from">Translate From</string>
+    <string name="delete_model">If you remove this model, offline translation for this language will no longer be available.</string>
+    <string name="download_model">Download this language model to enable offline translation.</string>
+    <string name="cancel">Cancel</string>
+    <string name="delete">Delete</string>
+    <string name="download">Download</string>
 </resources>

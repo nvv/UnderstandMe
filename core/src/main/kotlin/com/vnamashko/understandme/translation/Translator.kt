@@ -2,15 +2,18 @@ package com.vnamashko.understandme.translation
 
 import com.google.android.gms.tasks.Tasks
 import com.google.mlkit.common.MlKitException
+import com.google.mlkit.common.model.DownloadConditions
 import com.google.mlkit.common.model.RemoteModelManager
 import com.google.mlkit.nl.translate.TranslateLanguage
 import com.google.mlkit.nl.translate.TranslateRemoteModel
 import com.google.mlkit.nl.translate.Translation
 import com.google.mlkit.nl.translate.TranslatorOptions
 import com.vnamashko.understandme.coroutines.AppCoroutinesScope
+import com.vnamashko.understandme.coroutines.IODispatcher
 import com.vnamashko.understandme.network.NetworkConnectionManager
-import com.vnamashko.understandme.translation.model.Language
 import com.vnamashko.understandme.translation.model.Event
+import com.vnamashko.understandme.translation.model.Language
+import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.channels.BufferOverflow
 import kotlinx.coroutines.flow.MutableSharedFlow
@@ -21,8 +24,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.filterNotNull
-import kotlinx.coroutines.flow.flow
-import kotlinx.coroutines.flow.launchIn
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.shareIn
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
@@ -39,6 +41,8 @@ interface Translator {
 
     val downloadedModels: StateFlow<List<String>>
 
+    val downloadingModels: StateFlow<Set<String>>
+
     fun translate(text: String)
 
     fun retryTranslate()
@@ -46,10 +50,15 @@ interface Translator {
     fun setSourceLanguage(language: String)
 
     fun setTargetLanguage(language: String)
+
+    fun deleteModel(language: String)
+
+    fun downloadModel(language: String)
 }
 
 class TranslatorImpl @Inject constructor(
     @AppCoroutinesScope val externalScope: CoroutineScope,
+    @IODispatcher val ioDispatcher: CoroutineDispatcher,
     private val networkConnectionManager: NetworkConnectionManager
 ): Translator {
 
@@ -75,11 +84,15 @@ class TranslatorImpl @Inject constructor(
         }
     }
 
-    override val downloadedModels: StateFlow<List<String>> = flow {
-        val models =
-            Tasks.await(modelManager.getDownloadedModels(TranslateRemoteModel::class.java))
+    private val _downloadingModels = MutableStateFlow<Set<String>>(emptySet())
+    override val downloadingModels = _downloadingModels
 
-        emit(models.map { it.language })
+    private val _downloadedModels: MutableStateFlow<Set<TranslateRemoteModel>> = MutableStateFlow(
+        emptySet()
+    )
+
+    override val downloadedModels: StateFlow<List<String>> = _downloadedModels.map {
+        it.map { it.language }
     }.stateIn(externalScope, SharingStarted.Lazily, emptyList())
 
     private val translator: SharedFlow<MlKitTranslator?> =
@@ -95,7 +108,6 @@ class TranslatorImpl @Inject constructor(
 
         val translator = Translation.getClient(options)
         if (networkConnectionManager.isInternetAvailable()) {
-            _events.emit(Event.LOADING_MODEL)
             Tasks.await(translator.downloadModelIfNeeded())
         }
         translator
@@ -140,10 +152,33 @@ class TranslatorImpl @Inject constructor(
         targetLanguage.value = language
     }
 
+    override fun deleteModel(language: String) {
+        _downloadedModels.value.find { it.language == language }?.let {
+            externalScope.launch(ioDispatcher) {
+                Tasks.await(modelManager.deleteDownloadedModel(it))
+                _downloadedModels.value = getDownloadedModels()
+            }
+        }
+    }
+
+    override fun downloadModel(language: String) {
+        externalScope.launch(ioDispatcher) {
+            _downloadingModels.value += language
+            val model = TranslateRemoteModel.Builder(language).build()
+            Tasks.await(modelManager.download(model, DownloadConditions.Builder().build()))
+            _downloadedModels.value = getDownloadedModels()
+            _downloadingModels.value -= language
+        }
+    }
+
+    private fun getDownloadedModels() =
+        Tasks.await(modelManager.getDownloadedModels(TranslateRemoteModel::class.java))
+
     init {
-        downloadedModels.launchIn(externalScope)
         externalScope.launch {
             retryTrigger.emit(true)
+
+            _downloadedModels.value = getDownloadedModels()
         }
     }
 }

@@ -61,6 +61,8 @@ import com.vnamashko.understandme.theme.AppTheme
 import com.vnamashko.understandme.translation.model.Language
 import com.vnamashko.understandme.translation.model.Screen
 import com.vnamashko.understandme.utils.getLanguageTag
+import com.vnamashko.undertsndme.language.picker.DeleteModelDialog
+import com.vnamashko.undertsndme.language.picker.DownloadModelDialog
 import com.vnamashko.undertsndme.language.picker.LanguageFor
 import com.vnamashko.undertsndme.language.picker.LanguagePickerControl
 import com.vnamashko.undertsndme.translation.screen.HomeScreen
@@ -117,6 +119,9 @@ class TranslateActivity : ComponentActivity() {
 
             val clipboardManager = LocalClipboardManager.current
             val lifecycleOwner = LocalLifecycleOwner.current
+
+            var openDeleteModelDialogForLanguage by remember { mutableStateOf<Language?>(null) }
+            var openDownloadModelDialogForLanguage by remember { mutableStateOf<Language?>(null) }
 
             var isPasteAvailable by remember { mutableStateOf(false) }
 
@@ -327,11 +332,41 @@ class TranslateActivity : ComponentActivity() {
                                     LanguageFor.SOURCE -> stringResource(translate_from)
                                     LanguageFor.TARGET -> stringResource(translate_to)
                                     null -> ""
+                                },
+                                onDownloadLanguageModel = {
+                                    openDownloadModelDialogForLanguage = it
+                                },
+                                onDeleteLanguageModel = {
+                                    openDeleteModelDialogForLanguage = it
                                 }
                             )
                         }
                     }
                 }
+            }
+
+            val deleteLanguage = openDeleteModelDialogForLanguage
+            if (deleteLanguage != null) {
+                DeleteModelDialog(
+                    onDismissRequest = { openDeleteModelDialogForLanguage = null },
+                    onConfirmation = {
+                        viewModel.deleteModelForLanguage(deleteLanguage)
+                        openDeleteModelDialogForLanguage = null
+                    },
+                    languageString = deleteLanguage.displayName,
+                )
+            }
+
+            val downloadLanguage = openDownloadModelDialogForLanguage
+            if (downloadLanguage != null) {
+                DownloadModelDialog(
+                    onDismissRequest = { openDownloadModelDialogForLanguage = null },
+                    onConfirmation = {
+                        viewModel.downloadModelForLanguage(downloadLanguage)
+                        openDownloadModelDialogForLanguage = null
+                    },
+                    languageString = downloadLanguage.displayName,
+                )
             }
 
             LaunchedEffect(lifecycleOwner) {
