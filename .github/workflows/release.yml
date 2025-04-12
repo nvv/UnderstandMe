@@ -16,12 +16,6 @@ jobs:
         with:
           distribution: 'temurin'
           java-version: '17'
-
-      - name: Decode keystore
-        run: |
-          echo "${{ secrets.KEYSTORE_BASE64 }}" | base64 -d > release-key.jks
-          echo "KEYSTORE_PATH=$(pwd)/release-key.jks" >> $GITHUB_ENV
-
       - name: Build prodRelease
         run: ./gradlew bundleRelease
       - name: Sign AAb
