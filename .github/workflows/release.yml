@@ -22,11 +22,20 @@ jobs:
           echo "${{ secrets.KEYSTORE_BASE64 }}" | base64 -d > release-key.jks
           echo "KEYSTORE_PATH=$(pwd)/release-key.jks" >> $GITHUB_ENV
 
-      - name: Build Release APK
-        run: ./gradlew assembleRelease
-
-      - name: Upload artifact
-        uses: actions/upload-artifact@v4
+      - name: Build prodRelease
+        run: ./gradlew bundleRelease
+      - name: Sign AAb
+        id: sign
+        uses: r0adkll/sign-android-release@v1
         with:
-          name: release-apk
-          path: app/build/outputs/apk/release/app-release.apk
+          releaseDirectory: app/build/outputs/bundle/release
+          signingKeyBase64: '${{ secrets.KEYSTORE_BASE64 }}'
+          alias: '${{ secrets.KEY_ALIAS }}'
+          keyStorePassword: '${{ secrets.KEYSTORE_PASSWORD }}'
+          keyPassword: '${{ secrets.KEY_PASSWORD }}'
+      - name: Upload app bundle as artifact
+        uses: actions/upload-artifact@v2
+        with:
+          name: app-bundle
+          path: app/build/outputs/bundle/release/app-release.aab
+      - run: 'echo Build status report=${{ job.status }}'
