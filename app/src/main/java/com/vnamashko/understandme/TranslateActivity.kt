@@ -98,7 +98,6 @@ class TranslateActivity : ComponentActivity() {
 
         enableEdgeToEdge()
         setContent {
-            // intent.getStringExtra(Intent.EXTRA_PROCESS_TEXT)
             val originalText by viewModel.originalText.collectAsStateWithLifecycle()
             val translatedText by viewModel.translatedText.collectAsStateWithLifecycle()
             val supportedModels by viewModel.supportedModels.collectAsStateWithLifecycle()
@@ -373,6 +372,13 @@ class TranslateActivity : ComponentActivity() {
                 lifecycleOwner.lifecycle.repeatOnLifecycle(Lifecycle.State.RESUMED) {
                     delay(100)
                     isPasteAvailable = clipboardManager.hasText()
+                }
+            }
+
+            LaunchedEffect(Unit) {
+                intent.getStringExtra(Intent.EXTRA_PROCESS_TEXT)?.let {
+                    viewModel.translate(it)
+                    navController.navigate(Screen.InteractiveTranslate.route)
                 }
             }
 
