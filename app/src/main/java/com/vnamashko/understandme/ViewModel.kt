@@ -99,6 +99,10 @@ class ViewModel @Inject constructor(
         }
     }
 
+    fun stopPlayback() {
+        tts.stop()
+    }
+
     fun selectSourceLanguage(language: Language) {
         if (language == _targetLanguage.value) {
             flipLanguages()

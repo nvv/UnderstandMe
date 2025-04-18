@@ -431,6 +431,8 @@ class TranslateActivity : ComponentActivity() {
 
             LaunchedEffect(Unit) {
                 navController.currentBackStackEntryFlow.collect { nav ->
+                    viewModel.stopPlayback()
+
                     if (nav.destination.route == Screen.Home.route) {
                         viewModel.translate("")
                     }
