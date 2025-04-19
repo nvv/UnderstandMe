@@ -28,7 +28,9 @@ fun SpeechListeningResults(
     translation: String,
     targetLanguage: Language?,
     sourceLanguage: Language?,
+    proposedSourceLanguage: Language?,
     selectForTarget: (LanguageFor) -> Unit,
+    selectProposedLanguage: () -> Unit,
     flipLanguages: () -> Unit,
     playbackOriginalText: () -> Unit,
     playbackTranslatedText: () -> Unit,
@@ -81,8 +83,10 @@ fun SpeechListeningResults(
         Spacer(modifier = Modifier.weight(1f))
         LanguageSelectionControl(
             sourceLanguage = sourceLanguage,
+            proposedSourceLanguage = proposedSourceLanguage,
             targetLanguage = targetLanguage,
             selectFor = selectForTarget,
+            selectProposedLanguage = selectProposedLanguage,
             flipLanguages = flipLanguages
         )
         MicButton(isSpeechToTextListening = false, onClicked = onStartListening)
@@ -98,7 +102,9 @@ fun SpeechListeningResultsPreview() {
             translation = "Hello, how are you?",
             targetLanguage = Language(code = "en", displayName = "English"),
             sourceLanguage = Language(code = "es", displayName = "Spanish"),
+            proposedSourceLanguage = null,
             selectForTarget = {},
+            selectProposedLanguage = {},
             flipLanguages = {},
             playbackOriginalText = {},
             playbackTranslatedText = {},

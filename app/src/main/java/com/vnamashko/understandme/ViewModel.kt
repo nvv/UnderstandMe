@@ -22,6 +22,7 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.flow.firstOrNull
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import javax.inject.Inject
@@ -47,6 +48,13 @@ class ViewModel @Inject constructor(
     private val _targetLanguage = MutableStateFlow<Language?>(null)
     val targetLanguage = _targetLanguage.asStateFlow()
 
+    val proposedSourceLanguage: StateFlow<Language?> = combine(
+        translator.detectedLanguage,
+        _sourceLanguage.map { it?.code }
+    ) { detected, selected ->
+        if (detected != "und" && detected != selected) translator.supportedLanguages.find { it.code == detected } else null
+    }.stateIn(viewModelScope, SharingStarted.Lazily, null)
+
     val supportedModels =
         combine(
             translator.downloadedModels,
@@ -68,6 +76,10 @@ class ViewModel @Inject constructor(
     fun translate(text: String) {
         _originalText.value = text
         translator.translate(text)
+    }
+
+    fun selectProposedLanguage() {
+        selectSourceLanguage(proposedSourceLanguage.value ?: return)
     }
 
     fun deleteModelForLanguage(language: Language) {

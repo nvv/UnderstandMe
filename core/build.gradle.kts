@@ -38,6 +38,7 @@ dependencies {
     implementation(libs.kotlinx.coroutines)
 
     implementation(libs.mlkit.translate)
+    implementation(libs.mlkit.language.id)
 
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.appcompat)

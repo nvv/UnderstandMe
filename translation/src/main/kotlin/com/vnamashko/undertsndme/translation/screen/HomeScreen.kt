@@ -50,8 +50,10 @@ fun HomeScreen(
         Spacer(modifier = Modifier.weight(1f))
         LanguageSelectionControl(
             sourceLanguage = sourceLanguage,
+            proposedSourceLanguage = null,
             targetLanguage = targetLanguage,
             selectFor = selectForTarget,
+            selectProposedLanguage = {},
             flipLanguages = flipLanguages
         )
         MicButton(

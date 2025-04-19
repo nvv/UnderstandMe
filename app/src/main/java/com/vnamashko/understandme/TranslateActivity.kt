@@ -103,6 +103,7 @@ class TranslateActivity : ComponentActivity() {
             val supportedModels by viewModel.supportedModels.collectAsStateWithLifecycle()
             val sourceLanguage by viewModel.sourceLanguage.collectAsStateWithLifecycle()
             val targetLanguage by viewModel.targetLanguage.collectAsStateWithLifecycle()
+            val proposedSourceLanguage by viewModel.proposedSourceLanguage.collectAsStateWithLifecycle()
 
             var selectFor by remember { mutableStateOf<LanguageFor?>(null) }
 
@@ -226,24 +227,18 @@ class TranslateActivity : ComponentActivity() {
                         composable(Screen.InteractiveTranslate.route) {
                             InteractiveTranslationScreen(
                                 initialText = originalText,
-                                onTextChanged = {
-                                    viewModel.translate(it)
-                                },
-                                playbackOriginalText = {
-                                    viewModel.playbackOriginal()
-                                },
-                                playbackTranslatedText = {
-                                    viewModel.playbackTranslated()
-                                },
+                                onTextChanged = viewModel::translate,
+                                playbackOriginalText = viewModel::playbackOriginal,
+                                playbackTranslatedText = viewModel::playbackTranslated,
                                 translation = translatedText,
                                 selectForTarget = { target ->
                                     selectFor = target
                                     showBottomSheet = true
                                 },
-                                flipLanguages = {
-                                    viewModel.flipLanguages()
-                                },
+                                selectProposedLanguage = viewModel::selectProposedLanguage,
+                                flipLanguages = viewModel::flipLanguages,
                                 sourceLanguage = sourceLanguage,
+                                proposedSourceLanguage = proposedSourceLanguage,
                                 targetLanguage = targetLanguage,
                                 isPasteAvailable = isPasteAvailable,
                                 error = errorState,
@@ -260,6 +255,8 @@ class TranslateActivity : ComponentActivity() {
                                     viewModel.flipLanguages()
                                 },
                                 sourceLanguage = sourceLanguage,
+                                proposedSourceLanguage = proposedSourceLanguage,
+                                selectProposedLanguage = viewModel::selectProposedLanguage,
                                 targetLanguage = targetLanguage,
                                 onStopListening = {
                                     speechRecognizer?.stopListening()
@@ -275,17 +272,13 @@ class TranslateActivity : ComponentActivity() {
                                     selectFor = target
                                     showBottomSheet = true
                                 },
-                                flipLanguages = {
-                                    viewModel.flipLanguages()
-                                },
+                                selectProposedLanguage = viewModel::selectProposedLanguage,
+                                flipLanguages = viewModel::flipLanguages,
                                 sourceLanguage = sourceLanguage,
+                                proposedSourceLanguage = proposedSourceLanguage,
                                 targetLanguage = targetLanguage,
-                                playbackOriginalText = {
-                                    viewModel.playbackOriginal()
-                                },
-                                playbackTranslatedText = {
-                                    viewModel.playbackTranslated()
-                                },
+                                playbackOriginalText = viewModel::playbackOriginal,
+                                playbackTranslatedText = viewModel::playbackTranslated,
                                 editText = {
                                     navController.popBackStack()
                                     navController.navigate(Screen.InteractiveTranslate.route)

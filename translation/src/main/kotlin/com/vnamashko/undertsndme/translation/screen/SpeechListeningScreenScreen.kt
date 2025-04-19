@@ -19,7 +19,9 @@ import com.vnamashko.undertsndme.language.picker.LanguageSelectionControl
 fun SpeechListeningScreenScreen(
     targetLanguage: Language?,
     sourceLanguage: Language?,
+    proposedSourceLanguage: Language?,
     selectForTarget: (LanguageFor) -> Unit,
+    selectProposedLanguage: () -> Unit,
     flipLanguages: () -> Unit,
     onStopListening: () -> Unit,
     modifier: Modifier = Modifier
@@ -38,8 +40,10 @@ fun SpeechListeningScreenScreen(
         Spacer(modifier = Modifier.weight(1f))
         LanguageSelectionControl(
             sourceLanguage = sourceLanguage,
+            proposedSourceLanguage = proposedSourceLanguage,
             targetLanguage = targetLanguage,
             selectFor = selectForTarget,
+            selectProposedLanguage = selectProposedLanguage,
             flipLanguages = flipLanguages
         )
         MicButton(isSpeechToTextListening = true, onClicked = onStopListening)
@@ -53,7 +57,9 @@ fun SpeechListeningScreenPreview() {
         SpeechListeningScreenScreen(
             targetLanguage = Language(code = "en", displayName = "English"),
             sourceLanguage = Language(code = "es", displayName = "Spanish"),
+            proposedSourceLanguage = null,
             selectForTarget = {},
+            selectProposedLanguage = {},
             flipLanguages = {},
             onStopListening = {}
         )

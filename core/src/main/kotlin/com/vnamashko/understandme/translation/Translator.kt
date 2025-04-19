@@ -4,6 +4,8 @@ import com.google.android.gms.tasks.Tasks
 import com.google.mlkit.common.MlKitException
 import com.google.mlkit.common.model.DownloadConditions
 import com.google.mlkit.common.model.RemoteModelManager
+import com.google.mlkit.nl.languageid.LanguageIdentification
+import com.google.mlkit.nl.languageid.LanguageIdentificationOptions
 import com.google.mlkit.nl.translate.TranslateLanguage
 import com.google.mlkit.nl.translate.TranslateRemoteModel
 import com.google.mlkit.nl.translate.Translation
@@ -22,6 +24,7 @@ import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asSharedFlow
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.flow.map
@@ -34,6 +37,8 @@ import com.google.mlkit.nl.translate.Translator as MlKitTranslator
 
 interface Translator {
     val events: SharedFlow<Event>
+
+    val detectedLanguage: StateFlow<String?>
 
     val translatedText: StateFlow<String?>
 
@@ -64,8 +69,18 @@ class TranslatorImpl @Inject constructor(
 
     private val modelManager = RemoteModelManager.getInstance()
 
+    private val languageIdentifier = LanguageIdentification
+        .getClient(
+            LanguageIdentificationOptions.Builder()
+                .setConfidenceThreshold(0.8f)
+                .build()
+        )
+
     private val _events: MutableSharedFlow<Event> = MutableSharedFlow(1)
     override val events: SharedFlow<Event> = _events.asSharedFlow()
+
+    private val _detectedLanguage: MutableStateFlow<String?> = MutableStateFlow(null)
+    override val detectedLanguage: StateFlow<String?> = _detectedLanguage.asStateFlow()
 
     private val sourceLanguage = MutableStateFlow<String?>(null)
     private val targetLanguage = MutableStateFlow<String?>(null)
@@ -115,8 +130,14 @@ class TranslatorImpl @Inject constructor(
 
     override val translatedText = combine(translator.filterNotNull(), textToTranslate) { translator, text ->
         if (text == null) {
+            _detectedLanguage.value = null
             null
         } else {
+
+            languageIdentifier.identifyLanguage(text).addOnSuccessListener {
+                _detectedLanguage.value = it
+            }
+
             val task = translator.translate(text)
             task.addOnFailureListener { ex ->
                 if (ex is MlKitException && ex.errorCode == MlKitException.NOT_FOUND) {

@@ -44,6 +44,8 @@ fun InteractiveTranslationScreen(
     translation: String?,
     targetLanguage: Language?,
     sourceLanguage: Language?,
+    proposedSourceLanguage: Language?,
+    selectProposedLanguage: () -> Unit,
     selectForTarget: (LanguageFor) -> Unit,
     flipLanguages: () -> Unit,
     isPasteAvailable: Boolean,
@@ -67,8 +69,10 @@ fun InteractiveTranslationScreen(
         Spacer(modifier = Modifier.weight(1f))
         LanguageSelectionControl(
             sourceLanguage = sourceLanguage,
+            proposedSourceLanguage = proposedSourceLanguage,
             targetLanguage = targetLanguage,
             selectFor = selectForTarget,
+            selectProposedLanguage = selectProposedLanguage,
             flipLanguages = flipLanguages
         )
     }
@@ -193,7 +197,9 @@ fun InteractiveTranslationScreenPreview() {
             translation = "Hello, how are you?",
             targetLanguage = Language(code = "en", displayName = "English"),
             sourceLanguage = Language(code = "es", displayName = "Spanish"),
+            proposedSourceLanguage = null,
             selectForTarget = {},
+            selectProposedLanguage = {},
             flipLanguages = {},
             isPasteAvailable = true,
             error = null
@@ -214,6 +220,8 @@ fun InteractiveTranslationScreenErrorPreview() {
             translation = "Hello, how are you?",
             targetLanguage = Language(code = "en", displayName = "English"),
             sourceLanguage = Language(code = "es", displayName = "Spanish"),
+            proposedSourceLanguage = null,
+            selectProposedLanguage = {},
             selectForTarget = {},
             flipLanguages = {},
             isPasteAvailable = true,
