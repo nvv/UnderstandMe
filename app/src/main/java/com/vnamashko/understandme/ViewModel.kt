@@ -2,6 +2,9 @@ package com.vnamashko.understandme
 
 import android.content.res.Resources
 import androidx.lifecycle.viewModelScope
+import com.vnamashko.understandme.data.dao.RecentLanguageDao
+import com.vnamashko.understandme.data.model.RecentLanguage
+import com.vnamashko.understandme.data.model.toRecentLanguage
 import com.vnamashko.understandme.network.NetworkConnectionManager
 import com.vnamashko.understandme.settings.SettingsDataStore
 import com.vnamashko.understandme.translation.Translator
@@ -20,6 +23,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.flow.map
@@ -33,7 +37,8 @@ class ViewModel @Inject constructor(
     private val networkConnectionManager: NetworkConnectionManager,
     private val translator: Translator,
     private val tts: Tts,
-    private val resources: Resources
+    private val resources: Resources,
+    private val recentLanguageDao: RecentLanguageDao,
 ) : androidx.lifecycle.ViewModel() {
 
     private val _effect = MutableSharedFlow<UiEffect>()
@@ -72,6 +77,13 @@ class ViewModel @Inject constructor(
             SharingStarted.Lazily,
             persistentListOf()
         )
+
+    val recentLanguages = combine(
+        recentLanguageDao.getRecentLanguages().distinctUntilChanged(),
+        supportedModels
+    ) { recents, supportedModels ->
+        supportedModels.filter { model -> recents.any { it.code == model.language.code } }.toImmutableList()
+    }.stateIn(viewModelScope, SharingStarted.Lazily, persistentListOf())
 
     fun translate(text: String) {
         _originalText.value = text
@@ -122,6 +134,8 @@ class ViewModel @Inject constructor(
             _sourceLanguage.value = language
             viewModelScope.launch {
                 dataStore.saveSourceLanguage(language.code)
+                recentLanguageDao.insertLanguage(language.toRecentLanguage())
+                recentLanguageDao.trimLanguages()
             }
         }
     }
@@ -133,6 +147,8 @@ class ViewModel @Inject constructor(
             _targetLanguage.value = language
             viewModelScope.launch {
                 dataStore.saveTargetLanguage(language.code)
+                recentLanguageDao.insertLanguage(language.toRecentLanguage())
+                recentLanguageDao.trimLanguages()
             }
         }
     }

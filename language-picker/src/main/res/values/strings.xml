@@ -9,4 +9,6 @@
     <string name="cancel">Cancel</string>
     <string name="delete">Delete</string>
     <string name="download">Download</string>
+    <string name="recent_languages">Recent Languages</string>
+    <string name="all_languages">All Languages</string>
 </resources>

@@ -37,6 +37,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.vnamashko.understandme.language.picker.R
 import com.vnamashko.understandme.translation.model.Language
@@ -51,17 +53,13 @@ import kotlinx.coroutines.launch
 fun LanguagePickerControl(
     selectedLanguage: Language?,
     supportedModels: ImmutableList<LanguageModel>,
+    recentLanguage: ImmutableList<LanguageModel>,
     onSelect: (Language) -> Unit,
     onDownloadLanguageModel: (Language) -> Unit,
     onDeleteLanguageModel: (Language) -> Unit,
     searchTitle: String,
     modifier: Modifier = Modifier
 ) {
-    val selectedIndex = supportedModels.indexOfFirst { it.language == selectedLanguage }
-
-    val listState = rememberLazyListState()
-    val coroutineScope = rememberCoroutineScope()
-
     var isSearching by remember { mutableStateOf(false) }
     var searchQuery by remember { mutableStateOf("") }
 
@@ -137,7 +135,42 @@ fun LanguagePickerControl(
             }
         }
 
-        LazyColumn(state = listState) {
+        LazyColumn {
+            if (searchQuery.isEmpty() && recentLanguage.isNotEmpty()) {
+                item(key = "recent") {
+                    Text(
+                        text = stringResource(R.string.recent_languages),
+                        style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Bold),
+                        color = MaterialTheme.colorScheme.primary,
+                        modifier = Modifier.padding(16.dp)
+                    )
+
+                    Column {
+                        recentLanguage.forEach { model ->
+                            LanguageRow(
+                                model =  model,
+                                isSelected = model.language == selectedLanguage,
+                                onSelect = onSelect,
+                                onAction = {
+                                    if (model.isDownloaded) {
+                                        onDeleteLanguageModel(model.language)
+                                    } else {
+                                        onDownloadLanguageModel(model.language)
+                                    }
+                                },
+                            )
+                        }
+                    }
+
+                    Text(
+                        text = stringResource(R.string.all_languages),
+                        style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Bold),
+                        color = MaterialTheme.colorScheme.primary,
+                        modifier = Modifier.padding(16.dp)
+                    )
+                }
+            }
+
             items(
                 items = filteredLanguages,
                 key = { model -> model.language.code }
@@ -157,15 +190,6 @@ fun LanguagePickerControl(
             }
         }
     }
-
-    LaunchedEffect(selectedIndex) {
-        coroutineScope.launch {
-            if (selectedIndex > 0) {
-                listState.scrollToItem(selectedIndex)
-            }
-        }
-    }
-
 }
 
 @Composable

@@ -101,6 +101,7 @@ class TranslateActivity : ComponentActivity() {
             val originalText by viewModel.originalText.collectAsStateWithLifecycle()
             val translatedText by viewModel.translatedText.collectAsStateWithLifecycle()
             val supportedModels by viewModel.supportedModels.collectAsStateWithLifecycle()
+            val recentLanguage by viewModel.recentLanguages.collectAsStateWithLifecycle()
             val sourceLanguage by viewModel.sourceLanguage.collectAsStateWithLifecycle()
             val targetLanguage by viewModel.targetLanguage.collectAsStateWithLifecycle()
             val proposedSourceLanguage by viewModel.proposedSourceLanguage.collectAsStateWithLifecycle()
@@ -302,6 +303,7 @@ class TranslateActivity : ComponentActivity() {
                         ) {
                             LanguagePickerControl(
                                 supportedModels = supportedModels,
+                                recentLanguage = recentLanguage,
                                 selectedLanguage = when (selectFor) {
                                     LanguageFor.SOURCE -> sourceLanguage
                                     LanguageFor.TARGET -> targetLanguage

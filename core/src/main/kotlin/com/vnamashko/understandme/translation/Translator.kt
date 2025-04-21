@@ -123,6 +123,7 @@ class TranslatorImpl @Inject constructor(
 
         val translator = Translation.getClient(options)
         if (networkConnectionManager.isInternetAvailable()) {
+            // TODO: conditional download
             Tasks.await(translator.downloadModelIfNeeded())
         }
         translator
