@@ -229,23 +229,12 @@ class TranslateActivity : ComponentActivity() {
                         }
                         composable(Screen.InteractiveTranslate.route) {
                             InteractiveTranslationScreen(
-                                initialText = originalText,
-                                onTextChanged = viewModel::translate,
-                                playbackOriginalText = viewModel::playbackOriginal,
-                                playbackTranslatedText = viewModel::playbackTranslated,
-                                translation = translatedText,
-                                selectForTarget = { target ->
+                                selectForTarget = { target: LanguageFor ->
                                     selectFor = target
                                     showBottomSheet = true
                                 },
-                                selectProposedLanguage = viewModel::selectProposedLanguage,
-                                flipLanguages = viewModel::flipLanguages,
-                                sourceLanguage = sourceLanguage,
-                                proposedSourceLanguage = proposedSourceLanguage,
-                                targetLanguage = targetLanguage,
                                 isPasteAvailable = isPasteAvailable,
-                                error = errorState,
-                                modifier = Modifier.fillMaxWidth()
+                                errorState = errorState,
                             )
                         }
                         composable(Screen.Listen.route) {

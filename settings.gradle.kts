@@ -22,6 +22,7 @@ dependencyResolutionManagement {
 rootProject.name = "Understand Me"
 include(":app")
 include(":core")
+include(":core-ui")
 include(":theme")
 include(":language-picker")
 include(":translation")
