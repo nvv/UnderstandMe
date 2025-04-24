@@ -3,7 +3,6 @@ package com.vnamashko.understandme
 import android.content.res.Resources
 import androidx.lifecycle.viewModelScope
 import com.vnamashko.understandme.data.dao.RecentLanguageDao
-import com.vnamashko.understandme.data.model.RecentLanguage
 import com.vnamashko.understandme.data.model.toRecentLanguage
 import com.vnamashko.understandme.network.NetworkConnectionManager
 import com.vnamashko.understandme.settings.SettingsDataStore
@@ -32,7 +31,7 @@ import kotlinx.coroutines.launch
 import javax.inject.Inject
 
 @HiltViewModel
-class ViewModel @Inject constructor(
+class TranslateViewModel @Inject constructor(
     private val dataStore: SettingsDataStore,
     private val networkConnectionManager: NetworkConnectionManager,
     private val translator: Translator,

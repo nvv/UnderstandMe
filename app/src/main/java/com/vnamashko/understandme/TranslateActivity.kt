@@ -80,7 +80,7 @@ import kotlinx.coroutines.launch
 
 @AndroidEntryPoint
 class TranslateActivity : ComponentActivity() {
-    private val viewModel: ViewModel by viewModels()
+    private val viewModel: TranslateViewModel by viewModels()
 
     private var speechRecognizer: SpeechRecognizer? = null
 
