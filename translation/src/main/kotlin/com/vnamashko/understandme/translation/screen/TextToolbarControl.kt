@@ -1,4 +1,4 @@
-package com.vnamashko.undertsndme.translation.screen
+package com.vnamashko.understandme.translation.screen
 
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
@@ -14,6 +14,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
+import com.vnamashko.undertsndme.translation.screen.R
 
 @Composable
 fun TextToolbarControl(

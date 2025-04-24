@@ -65,11 +65,11 @@ import com.vnamashko.undertsndme.language.picker.DeleteModelDialog
 import com.vnamashko.undertsndme.language.picker.DownloadModelDialog
 import com.vnamashko.undertsndme.language.picker.LanguageFor
 import com.vnamashko.undertsndme.language.picker.LanguagePickerControl
-import com.vnamashko.undertsndme.translation.screen.HomeScreen
-import com.vnamashko.undertsndme.translation.screen.InteractiveTranslationScreen
-import com.vnamashko.undertsndme.translation.screen.SpeechListeningResults
-import com.vnamashko.undertsndme.translation.screen.SpeechListeningScreenScreen
-import com.vnamashko.undertsndme.translation.screen.TranslationError
+import com.vnamashko.understandme.translation.screen.HomeScreen
+import com.vnamashko.understandme.translation.screen.InteractiveTranslationScreen
+import com.vnamashko.understandme.translation.screen.SpeechListeningResults
+import com.vnamashko.understandme.translation.screen.SpeechListeningScreenScreen
+import com.vnamashko.understandme.translation.screen.TranslationError
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.combine

@@ -1,4 +1,4 @@
-package com.vnamashko.undertsndme.translation.screen
+package com.vnamashko.understandme.translation.screen
 
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Box

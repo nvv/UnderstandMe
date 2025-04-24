@@ -1,4 +1,4 @@
-package com.vnamashko.undertsndme.translation.screen
+package com.vnamashko.understandme.translation.screen
 
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -32,6 +32,7 @@ import androidx.compose.ui.unit.dp
 import com.vnamashko.understandme.translation.model.Language
 import com.vnamashko.undertsndme.language.picker.LanguageFor
 import com.vnamashko.undertsndme.language.picker.LanguageSelectionControl
+import com.vnamashko.undertsndme.translation.screen.R
 import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.flow.debounce
 

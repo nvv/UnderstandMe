@@ -1,4 +1,4 @@
-package com.vnamashko.undertsndme.translation.screen
+package com.vnamashko.understandme.translation.screen
 
 import androidx.compose.animation.Crossfade
 import androidx.compose.animation.animateColorAsState
@@ -38,6 +38,7 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import com.vnamashko.undertsndme.translation.screen.R
 
 @Composable
 fun PasteButton(onClicked: () -> Unit, modifier: Modifier = Modifier) {
