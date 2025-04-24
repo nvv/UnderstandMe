@@ -1,8 +1,6 @@
 package com.vnamashko.understandme
 
-import android.Manifest
 import android.content.Intent
-import android.content.pm.PackageManager
 import android.os.Bundle
 import android.speech.RecognizerIntent
 import android.speech.SpeechRecognizer
@@ -44,8 +42,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalClipboardManager
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
-import androidx.core.app.ActivityCompat
-import androidx.core.content.ContextCompat
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -196,35 +192,9 @@ class TranslateActivity : ComponentActivity() {
                                     selectFor = target
                                     showBottomSheet = true
                                 },
-                                flipLanguages = {
-                                    viewModel.flipLanguages()
-                                },
-                                sourceLanguage = sourceLanguage,
-                                targetLanguage = targetLanguage,
                                 isPasteAvailable = isPasteAvailable,
-                                goToInteractiveTranslation = {
-                                    navController.navigate(Screen.InteractiveTranslate.route)
-                                },
-                                pasteToInteractiveTranslation = {
-                                    viewModel.translate(clipboardManager.getText()?.text ?: "")
-                                    navController.navigate(Screen.InteractiveTranslate.route)
-                                },
-                                listenButtonClicked = {
-                                    if (ContextCompat.checkSelfPermission(
-                                            this@TranslateActivity,
-                                            Manifest.permission.RECORD_AUDIO
-                                        ) != PackageManager.PERMISSION_GRANTED
-                                    ) {
-                                        ActivityCompat.requestPermissions(
-                                            this@TranslateActivity,
-                                            arrayOf(Manifest.permission.RECORD_AUDIO),
-                                            1
-                                        )
-                                    } else {
-                                        startListening(sourceLanguage)
-                                    }
-                                },
-                                modifier = Modifier.fillMaxWidth()
+                                startListening = ::startListening,
+                                navController = navController
                             )
                         }
                         composable(Screen.InteractiveTranslate.route) {
