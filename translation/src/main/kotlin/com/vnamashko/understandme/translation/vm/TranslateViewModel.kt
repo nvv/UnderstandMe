@@ -1,4 +1,4 @@
-package com.vnamashko.understandme
+package com.vnamashko.understandme.translation.vm
 
 import android.content.res.Resources
 import androidx.lifecycle.viewModelScope
@@ -12,6 +12,7 @@ import com.vnamashko.understandme.translation.model.Language
 import com.vnamashko.understandme.translation.model.LanguageModel
 import com.vnamashko.understandme.tts.Tts
 import com.vnamashko.understandme.translation.screen.TranslationError
+import com.vnamashko.undertsndme.translation.screen.R
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.collections.immutable.persistentListOf
 import kotlinx.collections.immutable.toImmutableList

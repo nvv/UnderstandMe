@@ -60,23 +60,25 @@ import com.vnamashko.understandme.stt.SpeechRecognitionListener
 import com.vnamashko.understandme.theme.AppTheme
 import com.vnamashko.understandme.translation.model.Language
 import com.vnamashko.understandme.translation.model.Screen
-import com.vnamashko.understandme.utils.getLanguageTag
-import com.vnamashko.undertsndme.language.picker.DeleteModelDialog
-import com.vnamashko.undertsndme.language.picker.DownloadModelDialog
-import com.vnamashko.undertsndme.language.picker.LanguageFor
-import com.vnamashko.undertsndme.language.picker.LanguagePickerControl
 import com.vnamashko.understandme.translation.screen.HomeScreen
 import com.vnamashko.understandme.translation.screen.InteractiveTranslationScreen
 import com.vnamashko.understandme.translation.screen.SpeechListeningResults
 import com.vnamashko.understandme.translation.screen.SpeechListeningScreenScreen
 import com.vnamashko.understandme.translation.screen.TranslationError
+import com.vnamashko.understandme.translation.vm.TranslateViewModel
+import com.vnamashko.understandme.translation.vm.UiEffect
+import com.vnamashko.understandme.utils.getLanguageTag
+import com.vnamashko.undertsndme.language.picker.DeleteModelDialog
+import com.vnamashko.undertsndme.language.picker.DownloadModelDialog
+import com.vnamashko.undertsndme.language.picker.LanguageFor
+import com.vnamashko.undertsndme.language.picker.LanguagePickerControl
+import com.vnamashko.undertsndme.translation.screen.R.string.error_translating_text
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
-
 
 @AndroidEntryPoint
 class TranslateActivity : ComponentActivity() {
@@ -393,7 +395,7 @@ class TranslateActivity : ComponentActivity() {
                             scope.launch {
                                 snackbarHostState
                                     .showSnackbar(
-                                        message = getString(R.string.error_translating_text),
+                                        message = getString(error_translating_text),
                                         duration = SnackbarDuration.Long
                                     )
                             }
