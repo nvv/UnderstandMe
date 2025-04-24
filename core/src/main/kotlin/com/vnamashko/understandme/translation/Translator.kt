@@ -127,7 +127,7 @@ class TranslatorImpl @Inject constructor(
             Tasks.await(translator.downloadModelIfNeeded())
         }
         translator
-    }.shareIn(externalScope, SharingStarted.Eagerly, 0)
+    }.shareIn(externalScope, SharingStarted.Eagerly, 1)
 
     override val translatedText = combine(translator.filterNotNull(), textToTranslate) { translator, text ->
         if (text == null) {

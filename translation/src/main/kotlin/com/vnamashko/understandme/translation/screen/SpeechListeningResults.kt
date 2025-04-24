@@ -11,6 +11,7 @@ import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.pointer.pointerInput
@@ -18,9 +19,48 @@ import androidx.compose.ui.platform.LocalClipboardManager
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.navigation.NavController
 import com.vnamashko.understandme.translation.model.Language
+import com.vnamashko.understandme.translation.model.Screen
+import com.vnamashko.understandme.translation.vm.TranslateViewModel
+import com.vnamashko.understandme.utils.coreui.activityViewModel
 import com.vnamashko.undertsndme.language.picker.LanguageFor
 import com.vnamashko.undertsndme.language.picker.LanguageSelectionControl
+
+@Composable
+fun SpeechListeningResults(
+    selectForTarget: (LanguageFor) -> Unit,
+    startListening: (Language?) -> Unit,
+    navController: NavController,
+    viewModel: TranslateViewModel = activityViewModel<TranslateViewModel>()
+) {
+    val originalText by viewModel.originalText.collectAsStateWithLifecycle()
+    val translatedText by viewModel.translatedText.collectAsStateWithLifecycle()
+    val sourceLanguage by viewModel.sourceLanguage.collectAsStateWithLifecycle()
+    val targetLanguage by viewModel.targetLanguage.collectAsStateWithLifecycle()
+    val proposedSourceLanguage by viewModel.proposedSourceLanguage.collectAsStateWithLifecycle()
+
+    SpeechListeningResults(
+        text = originalText,
+        translation = translatedText ?: "",
+        selectForTarget = selectForTarget,
+        selectProposedLanguage = viewModel::selectProposedLanguage,
+        flipLanguages = viewModel::flipLanguages,
+        sourceLanguage = sourceLanguage,
+        proposedSourceLanguage = proposedSourceLanguage,
+        targetLanguage = targetLanguage,
+        playbackOriginalText = viewModel::playbackOriginal,
+        playbackTranslatedText = viewModel::playbackTranslated,
+        editText = {
+            navController.popBackStack()
+            navController.navigate(Screen.InteractiveTranslate.route)
+        },
+        onStartListening = {
+            startListening(sourceLanguage)
+        }
+    )
+}
 
 @Composable
 fun SpeechListeningResults(
@@ -47,7 +87,7 @@ fun SpeechListeningResults(
     ) {
         Text(
             text = text,
-            style = MaterialTheme.typography.titleLarge.copy(color = MaterialTheme.colorScheme.primary),
+            style = MaterialTheme.typography.titleLarge,
             modifier = modifier.padding(16.dp).pointerInput(Unit) {
                 detectTapGestures(onTap = { _ -> editText() })
             }

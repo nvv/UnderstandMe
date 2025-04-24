@@ -16,7 +16,6 @@ import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
@@ -96,13 +95,10 @@ class TranslateActivity : ComponentActivity() {
 
         enableEdgeToEdge()
         setContent {
-            val originalText by viewModel.originalText.collectAsStateWithLifecycle()
-            val translatedText by viewModel.translatedText.collectAsStateWithLifecycle()
             val supportedModels by viewModel.supportedModels.collectAsStateWithLifecycle()
             val recentLanguage by viewModel.recentLanguages.collectAsStateWithLifecycle()
             val sourceLanguage by viewModel.sourceLanguage.collectAsStateWithLifecycle()
             val targetLanguage by viewModel.targetLanguage.collectAsStateWithLifecycle()
-            val proposedSourceLanguage by viewModel.proposedSourceLanguage.collectAsStateWithLifecycle()
 
             var selectFor by remember { mutableStateOf<LanguageFor?>(null) }
 
@@ -213,41 +209,19 @@ class TranslateActivity : ComponentActivity() {
                                     selectFor = target
                                     showBottomSheet = true
                                 },
-                                flipLanguages = {
-                                    viewModel.flipLanguages()
-                                },
-                                sourceLanguage = sourceLanguage,
-                                proposedSourceLanguage = proposedSourceLanguage,
-                                selectProposedLanguage = viewModel::selectProposedLanguage,
-                                targetLanguage = targetLanguage,
-                                onStopListening = {
+                                stopListening = {
                                     speechRecognizer?.stopListening()
-                                },
-                                modifier = Modifier.fillMaxWidth()
+                                }
                             )
                         }
                         composable(Screen.ListenResults.route) {
                             SpeechListeningResults(
-                                text = originalText,
-                                translation = translatedText ?: "",
                                 selectForTarget = { target ->
                                     selectFor = target
                                     showBottomSheet = true
                                 },
-                                selectProposedLanguage = viewModel::selectProposedLanguage,
-                                flipLanguages = viewModel::flipLanguages,
-                                sourceLanguage = sourceLanguage,
-                                proposedSourceLanguage = proposedSourceLanguage,
-                                targetLanguage = targetLanguage,
-                                playbackOriginalText = viewModel::playbackOriginal,
-                                playbackTranslatedText = viewModel::playbackTranslated,
-                                editText = {
-                                    navController.popBackStack()
-                                    navController.navigate(Screen.InteractiveTranslate.route)
-                                },
-                                onStartListening = {
-                                    startListening(sourceLanguage)
-                                }
+                                startListening = ::startListening,
+                                navController = navController
                             )
                         }
                     }

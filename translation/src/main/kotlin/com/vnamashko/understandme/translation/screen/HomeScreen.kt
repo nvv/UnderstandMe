@@ -36,8 +36,8 @@ import com.vnamashko.undertsndme.translation.screen.R
 fun HomeScreen(
     isPasteAvailable: Boolean,
     selectForTarget: (LanguageFor) -> Unit,
-    navController: NavController,
     startListening: (Language?) -> Unit,
+    navController: NavController,
     viewModel: TranslateViewModel = activityViewModel<TranslateViewModel>()
 ) {
     val sourceLanguage by viewModel.sourceLanguage.collectAsStateWithLifecycle()
