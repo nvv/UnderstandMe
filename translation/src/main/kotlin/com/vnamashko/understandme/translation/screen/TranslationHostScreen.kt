@@ -163,9 +163,18 @@ fun TranslationHostScreen(
             composable(Screen.Home.route) {
                 HomeScreen(
                     selectForTarget = selectForTarget,
+                    sourceLanguage = sourceLanguage,
+                    targetLanguage = targetLanguage,
                     isPasteAvailable = isPasteAvailable,
+                    flipLanguages = viewModel::flipLanguages,
                     startListening = startListening,
-                    navController = navController
+                    pasteToInteractiveTranslation = {
+                        viewModel.translate(clipboardManager.getText()?.text ?: "")
+                        navController.navigate(Screen.InteractiveTranslate.route)
+                    },
+                    goToInteractiveTranslation = {
+                        navController.navigate(Screen.InteractiveTranslate.route)
+                    }
                 )
             }
             composable(Screen.InteractiveTranslate.route) {
