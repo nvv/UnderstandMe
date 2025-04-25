@@ -29,46 +29,12 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.vnamashko.understandme.translation.model.Language
-import com.vnamashko.understandme.translation.vm.TranslateViewModel
-import com.vnamashko.understandme.utils.coreui.activityViewModel
 import com.vnamashko.undertsndme.language.picker.LanguageFor
 import com.vnamashko.undertsndme.language.picker.LanguageSelectionControl
 import com.vnamashko.undertsndme.translation.screen.R
 import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.flow.debounce
-
-@Composable
-fun InteractiveTranslationScreen(
-    errorState: TranslationError?,
-    isPasteAvailable: Boolean,
-    selectForTarget: (LanguageFor) -> Unit,
-    viewModel: TranslateViewModel = activityViewModel<TranslateViewModel>()
-) {
-    val originalText by viewModel.originalText.collectAsStateWithLifecycle()
-    val translatedText by viewModel.translatedText.collectAsStateWithLifecycle()
-    val sourceLanguage by viewModel.sourceLanguage.collectAsStateWithLifecycle()
-    val targetLanguage by viewModel.targetLanguage.collectAsStateWithLifecycle()
-    val proposedSourceLanguage by viewModel.proposedSourceLanguage.collectAsStateWithLifecycle()
-
-    InteractiveTranslationScreen(
-        initialText = originalText,
-        onTextChanged = viewModel::translate,
-        playbackOriginalText = viewModel::playbackOriginal,
-        playbackTranslatedText = viewModel::playbackTranslated,
-        translation = translatedText,
-        selectForTarget = selectForTarget,
-        selectProposedLanguage = viewModel::selectProposedLanguage,
-        flipLanguages = viewModel::flipLanguages,
-        sourceLanguage = sourceLanguage,
-        proposedSourceLanguage = proposedSourceLanguage,
-        targetLanguage = targetLanguage,
-        isPasteAvailable = isPasteAvailable,
-        error = errorState,
-        modifier = Modifier.fillMaxWidth()
-    )
-}
 
 @Composable
 fun InteractiveTranslationScreen(

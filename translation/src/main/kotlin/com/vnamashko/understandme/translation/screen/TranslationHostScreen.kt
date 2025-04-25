@@ -7,6 +7,7 @@ import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
@@ -69,10 +70,13 @@ fun TranslationHostScreen(
     speechRecognitionListener: SpeechRecognitionListener?,
     viewModel: TranslateViewModel = activityViewModel<TranslateViewModel>()
 ) {
+    val originalText by viewModel.originalText.collectAsStateWithLifecycle()
+    val translatedText by viewModel.translatedText.collectAsStateWithLifecycle()
     val supportedModels by viewModel.supportedModels.collectAsStateWithLifecycle()
     val recentLanguage by viewModel.recentLanguages.collectAsStateWithLifecycle()
     val sourceLanguage by viewModel.sourceLanguage.collectAsStateWithLifecycle()
     val targetLanguage by viewModel.targetLanguage.collectAsStateWithLifecycle()
+    val proposedSourceLanguage by viewModel.proposedSourceLanguage.collectAsStateWithLifecycle()
 
     var selectFor by remember { mutableStateOf<LanguageFor?>(null) }
 
@@ -174,14 +178,26 @@ fun TranslationHostScreen(
                     },
                     goToInteractiveTranslation = {
                         navController.navigate(Screen.InteractiveTranslate.route)
-                    }
+                    },
+                    modifier = Modifier.fillMaxWidth()
                 )
             }
             composable(Screen.InteractiveTranslate.route) {
                 InteractiveTranslationScreen(
+                    initialText = originalText,
+                    onTextChanged = viewModel::translate,
+                    playbackOriginalText = viewModel::playbackOriginal,
+                    playbackTranslatedText = viewModel::playbackTranslated,
+                    translation = translatedText,
+                    targetLanguage = targetLanguage,
+                    sourceLanguage = sourceLanguage,
+                    proposedSourceLanguage = proposedSourceLanguage,
+                    selectProposedLanguage = viewModel::selectProposedLanguage,
                     selectForTarget = selectForTarget,
                     isPasteAvailable = isPasteAvailable,
-                    errorState = errorState,
+                    flipLanguages = viewModel::flipLanguages,
+                    error = errorState,
+                    modifier = Modifier.fillMaxWidth(),
                 )
             }
             composable(Screen.Listen.route) {
