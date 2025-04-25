@@ -203,7 +203,13 @@ fun TranslationHostScreen(
             composable(Screen.Listen.route) {
                 SpeechListeningScreenScreen(
                     selectForTarget = selectForTarget,
-                    stopListening = stopListening
+                    targetLanguage = targetLanguage,
+                    sourceLanguage = sourceLanguage,
+                    proposedSourceLanguage = proposedSourceLanguage,
+                    selectProposedLanguage = viewModel::selectProposedLanguage,
+                    flipLanguages = viewModel::flipLanguages,
+                    onStopListening = stopListening,
+                    modifier = Modifier.fillMaxWidth(),
                 )
             }
             composable(Screen.ListenResults.route) {
