@@ -214,9 +214,24 @@ fun TranslationHostScreen(
             }
             composable(Screen.ListenResults.route) {
                 SpeechListeningResults(
+                    text = originalText,
+                    translation = translatedText ?: "",
                     selectForTarget = selectForTarget,
-                    startListening = startListening,
-                    navController = navController
+                    selectProposedLanguage = viewModel::selectProposedLanguage,
+                    flipLanguages = viewModel::flipLanguages,
+                    sourceLanguage = sourceLanguage,
+                    proposedSourceLanguage = proposedSourceLanguage,
+                    targetLanguage = targetLanguage,
+                    playbackOriginalText = viewModel::playbackOriginal,
+                    playbackTranslatedText = viewModel::playbackTranslated,
+                    editText = {
+                        navController.popBackStack()
+                        navController.navigate(Screen.InteractiveTranslate.route)
+                    },
+                    onStartListening = {
+                        startListening(sourceLanguage)
+                    },
+                    modifier = Modifier.fillMaxWidth(),
                 )
             }
         }

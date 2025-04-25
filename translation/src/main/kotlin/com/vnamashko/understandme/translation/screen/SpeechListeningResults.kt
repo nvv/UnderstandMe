@@ -30,40 +30,6 @@ import com.vnamashko.undertsndme.language.picker.LanguageSelectionControl
 
 @Composable
 fun SpeechListeningResults(
-    selectForTarget: (LanguageFor) -> Unit,
-    startListening: (Language?) -> Unit,
-    navController: NavController,
-    viewModel: TranslateViewModel = activityViewModel<TranslateViewModel>()
-) {
-    val originalText by viewModel.originalText.collectAsStateWithLifecycle()
-    val translatedText by viewModel.translatedText.collectAsStateWithLifecycle()
-    val sourceLanguage by viewModel.sourceLanguage.collectAsStateWithLifecycle()
-    val targetLanguage by viewModel.targetLanguage.collectAsStateWithLifecycle()
-    val proposedSourceLanguage by viewModel.proposedSourceLanguage.collectAsStateWithLifecycle()
-
-    SpeechListeningResults(
-        text = originalText,
-        translation = translatedText ?: "",
-        selectForTarget = selectForTarget,
-        selectProposedLanguage = viewModel::selectProposedLanguage,
-        flipLanguages = viewModel::flipLanguages,
-        sourceLanguage = sourceLanguage,
-        proposedSourceLanguage = proposedSourceLanguage,
-        targetLanguage = targetLanguage,
-        playbackOriginalText = viewModel::playbackOriginal,
-        playbackTranslatedText = viewModel::playbackTranslated,
-        editText = {
-            navController.popBackStack()
-            navController.navigate(Screen.InteractiveTranslate.route)
-        },
-        onStartListening = {
-            startListening(sourceLanguage)
-        }
-    )
-}
-
-@Composable
-fun SpeechListeningResults(
     text: String,
     translation: String,
     targetLanguage: Language?,
