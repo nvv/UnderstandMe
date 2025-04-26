@@ -1,5 +1,9 @@
 package com.vnamashko.understandme.translation.screen
 
+import android.app.Activity
+import android.content.Context
+import android.content.ContextWrapper
+import android.content.Intent
 import androidx.compose.animation.EnterTransition
 import androidx.compose.animation.ExitTransition
 import androidx.compose.foundation.clickable
@@ -32,6 +36,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalClipboardManager
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.Lifecycle
@@ -313,13 +318,15 @@ fun TranslationHostScreen(
             }
         }
 
-        LaunchedEffect(Unit) {
-            // TODO
+        val context = LocalContext.current
 
-//            intent.getStringExtra(Intent.EXTRA_PROCESS_TEXT)?.let {
-//                viewModel.translate(it)
-//                navController.navigate(Screen.InteractiveTranslate.route)
-//            }
+        LaunchedEffect(Unit) {
+            val activity = context.findActivity()
+            val intent = activity?.intent
+            intent?.getStringExtra(Intent.EXTRA_PROCESS_TEXT)?.let {
+                viewModel.translate(it)
+                navController.navigate(Screen.InteractiveTranslate.route)
+            }
         }
 
         // TODO
@@ -388,3 +395,8 @@ fun TranslationHostScreen(
     }
 }
 
+fun Context.findActivity(): Activity? = when (this) {
+    is Activity -> this
+    is ContextWrapper -> baseContext.findActivity()
+    else -> null
+}
