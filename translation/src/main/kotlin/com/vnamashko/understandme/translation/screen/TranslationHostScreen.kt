@@ -4,6 +4,7 @@ import android.app.Activity
 import android.content.Context
 import android.content.ContextWrapper
 import android.content.Intent
+import android.speech.tts.TextToSpeech
 import androidx.compose.animation.EnterTransition
 import androidx.compose.animation.ExitTransition
 import androidx.compose.foundation.clickable
@@ -329,16 +330,14 @@ fun TranslationHostScreen(
             }
         }
 
-        // TODO
         val errorMessage = stringResource(error_translating_text)
         LaunchedEffect(Unit) {
             viewModel.effect.collect { effect ->
                 when (effect) {
                     is UiEffect.RequestLanguageDownload -> {
-                        // TODO:
-                        //val intent = Intent(TextToSpeech.Engine.ACTION_INSTALL_TTS_DATA)
-                        //intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK
-                        //startActivity(intent)
+                        val intent = Intent(TextToSpeech.Engine.ACTION_INSTALL_TTS_DATA)
+                        intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK
+                        context.startActivity(intent)
                     }
                     is UiEffect.ClearError -> { errorState = null }
 
