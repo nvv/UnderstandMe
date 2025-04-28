@@ -85,6 +85,7 @@ fun TranslationHostScreen(
     val proposedSourceLanguage by viewModel.proposedSourceLanguage.collectAsStateWithLifecycle()
 
     var selectFor by remember { mutableStateOf<LanguageFor?>(null) }
+    var listeningPartialResult by remember { mutableStateOf<String?>(null) }
 
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
     val scope = rememberCoroutineScope()
@@ -208,6 +209,7 @@ fun TranslationHostScreen(
             }
             composable(Screen.Listen.route) {
                 SpeechListeningScreenScreen(
+                    partialResult = listeningPartialResult,
                     selectForTarget = selectForTarget,
                     targetLanguage = targetLanguage,
                     sourceLanguage = sourceLanguage,
@@ -375,6 +377,12 @@ fun TranslationHostScreen(
                         }
                     }
                 }
+            }
+        }
+
+        LaunchedEffect(Unit) {
+            speechRecognitionListener?.partialResult?.collect {
+                listeningPartialResult = it
             }
         }
 

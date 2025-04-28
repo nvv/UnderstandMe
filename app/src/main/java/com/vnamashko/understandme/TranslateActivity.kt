@@ -53,6 +53,7 @@ class TranslateActivity : ComponentActivity() {
                     RecognizerIntent.EXTRA_LANGUAGE,
                     getLanguageTag(sourceLanguage?.code ?: return@apply)
                 )
+                putExtra(RecognizerIntent.EXTRA_PARTIAL_RESULTS, true)
             }
 
         speechRecognizer = SpeechRecognizer.createSpeechRecognizer(this).apply {

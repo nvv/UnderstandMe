@@ -18,6 +18,7 @@ import com.vnamashko.undertsndme.translation.screen.R
 
 @Composable
 fun SpeechListeningScreenScreen(
+    partialResult: String?,
     targetLanguage: Language?,
     sourceLanguage: Language?,
     proposedSourceLanguage: Language?,
@@ -33,7 +34,7 @@ fun SpeechListeningScreenScreen(
             .fillMaxSize()
     ) {
         Text(
-            stringResource(R.string.speak),
+            partialResult ?: stringResource(R.string.speak),
             style = MaterialTheme.typography.titleLarge,
             modifier = Modifier.padding(16.dp)
         )
@@ -56,6 +57,7 @@ fun SpeechListeningScreenScreen(
 fun SpeechListeningScreenPreview() {
     MaterialTheme {
         SpeechListeningScreenScreen(
+            partialResult = null,
             targetLanguage = Language(code = "en", displayName = "English"),
             sourceLanguage = Language(code = "es", displayName = "Spanish"),
             proposedSourceLanguage = null,
