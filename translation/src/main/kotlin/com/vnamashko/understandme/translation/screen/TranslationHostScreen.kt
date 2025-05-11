@@ -44,6 +44,7 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.repeatOnLifecycle
+import androidx.navigation.NavDestination.Companion.hasRoute
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
@@ -105,14 +106,14 @@ fun TranslationHostScreen(
 
     var isPasteAvailable by remember { mutableStateOf(false) }
 
-    val hasBackNavigation by navController.currentBackStackEntryFlow.map { it.destination.route != Screen.Home.route }
+    val hasBackNavigation by navController.currentBackStackEntryFlow.map { nav -> !nav.destination.hasRoute<Screen.Home>() }
         .collectAsStateWithLifecycle(false)
 
     val hasClearIcon by combine(
         navController.currentBackStackEntryFlow,
         viewModel.originalText
     ) { nav, text ->
-        nav.destination.route == Screen.InteractiveTranslate.route && text.isNotEmpty()
+        nav.destination.hasRoute<Screen.InteractiveTranslate>() && text.isNotEmpty()
     }.collectAsStateWithLifecycle(false)
 
     val selectForTarget = { target: LanguageFor? ->
@@ -166,30 +167,32 @@ fun TranslationHostScreen(
     ) { innerPadding ->
         NavHost(
             navController = navController,
-            startDestination = Screen.Home.route,
+            startDestination = Screen.Home,
             enterTransition = { EnterTransition.None },
             exitTransition = { ExitTransition.None },
             modifier = Modifier.padding(innerPadding)
         ) {
-            composable(Screen.Home.route) {
+            composable<Screen.Home> {
                 HomeScreen(
                     selectForTarget = selectForTarget,
                     sourceLanguage = sourceLanguage,
                     targetLanguage = targetLanguage,
                     isPasteAvailable = isPasteAvailable,
                     flipLanguages = viewModel::flipLanguages,
-                    startListening = startListening,
+                    startListening = {
+                        navController.navigate(Screen.Listen)
+                    },
                     pasteToInteractiveTranslation = {
                         viewModel.translate(clipboardManager.getText()?.text ?: "")
-                        navController.navigate(Screen.InteractiveTranslate.route)
+                        navController.navigate(Screen.InteractiveTranslate)
                     },
                     goToInteractiveTranslation = {
-                        navController.navigate(Screen.InteractiveTranslate.route)
+                        navController.navigate(Screen.InteractiveTranslate)
                     },
                     modifier = Modifier.fillMaxWidth()
                 )
             }
-            composable(Screen.InteractiveTranslate.route) {
+            composable<Screen.InteractiveTranslate> {
                 InteractiveTranslationScreen(
                     initialText = originalText,
                     onTextChanged = viewModel::translate,
@@ -207,7 +210,7 @@ fun TranslationHostScreen(
                     modifier = Modifier.fillMaxWidth(),
                 )
             }
-            composable(Screen.Listen.route) {
+            composable<Screen.Listen> {
                 SpeechListeningScreenScreen(
                     partialResult = listeningPartialResult,
                     selectForTarget = selectForTarget,
@@ -217,10 +220,13 @@ fun TranslationHostScreen(
                     selectProposedLanguage = viewModel::selectProposedLanguage,
                     flipLanguages = viewModel::flipLanguages,
                     onStopListening = stopListening,
+                    onStartListening = {
+                        startListening(sourceLanguage)
+                    },
                     modifier = Modifier.fillMaxWidth(),
                 )
             }
-            composable(Screen.ListenResults.route) {
+            composable<Screen.ListenResults> {
                 SpeechListeningResults(
                     text = originalText,
                     translation = translatedText ?: "",
@@ -234,7 +240,7 @@ fun TranslationHostScreen(
                     playbackTranslatedText = viewModel::playbackTranslated,
                     editText = {
                         navController.popBackStack()
-                        navController.navigate(Screen.InteractiveTranslate.route)
+                        navController.navigate(Screen.InteractiveTranslate)
                     },
                     onStartListening = {
                         startListening(sourceLanguage)
@@ -328,7 +334,7 @@ fun TranslationHostScreen(
             val intent = activity?.intent
             intent?.getStringExtra(Intent.EXTRA_PROCESS_TEXT)?.let {
                 viewModel.translate(it)
-                navController.navigate(Screen.InteractiveTranslate.route)
+                navController.navigate(Screen.InteractiveTranslate)
             }
         }
 
@@ -362,16 +368,16 @@ fun TranslationHostScreen(
             speechRecognitionListener?.result?.filterNotNull()?.collect {
                 when (it) {
                     RecognitionResult.Listening -> {
-                        if (navController.currentBackStackEntry?.destination?.route == Screen.ListenResults.route) {
+                        if (navController.currentBackStackEntry?.destination?.hasRoute<Screen.ListenResults>() == true) {
                             navController.popBackStack()
+                            navController.navigate(Screen.Listen)
                         }
-                        navController.navigate(Screen.Listen.route)
                     }
                     is RecognitionResult.Finished -> {
                         if (it.text != null) {
                             viewModel.translate(it.text!!)
                             navController.popBackStack()
-                            navController.navigate(Screen.ListenResults.route)
+                            navController.navigate(Screen.ListenResults)
                         } else {
                             navController.popBackStack()
                         }
@@ -390,11 +396,11 @@ fun TranslationHostScreen(
             navController.currentBackStackEntryFlow.collect { nav ->
                 viewModel.stopPlayback()
 
-                if (nav.destination.route == Screen.Home.route) {
+                if (nav.destination.hasRoute<Screen.Home>()) {
                     viewModel.translate("")
                 }
 
-                if (nav.destination.route != Screen.Listen.route) {
+                if (nav.destination.hasRoute<Screen.Listen>()) {
                     destroyListener()
                 }
             }
