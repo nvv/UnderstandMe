@@ -11,7 +11,7 @@ import com.vnamashko.understandme.translation.model.Event
 import com.vnamashko.understandme.translation.model.Language
 import com.vnamashko.understandme.translation.model.LanguageModel
 import com.vnamashko.understandme.tts.Tts
-import com.vnamashko.understandme.translation.screen.TranslationError
+import com.vnamashko.understandme.translation.views.TranslationError
 import com.vnamashko.undertsndme.translation.screen.R
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.collections.immutable.persistentListOf

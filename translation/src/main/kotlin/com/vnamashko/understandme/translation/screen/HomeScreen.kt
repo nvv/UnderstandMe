@@ -20,6 +20,8 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
 import com.vnamashko.understandme.translation.model.Language
+import com.vnamashko.understandme.translation.views.MicButton
+import com.vnamashko.understandme.translation.views.PasteButton
 import com.vnamashko.undertsndme.language.picker.LanguageFor
 import com.vnamashko.undertsndme.language.picker.LanguageSelectionControl
 import com.vnamashko.undertsndme.translation.screen.R

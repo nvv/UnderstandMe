@@ -54,6 +54,7 @@ import com.vnamashko.understandme.stt.RecognitionResult
 import com.vnamashko.understandme.stt.SpeechRecognitionListener
 import com.vnamashko.understandme.translation.model.Language
 import com.vnamashko.understandme.translation.model.Screen
+import com.vnamashko.understandme.translation.views.TranslationError
 import com.vnamashko.understandme.translation.vm.TranslateViewModel
 import com.vnamashko.understandme.translation.vm.UiEffect
 import com.vnamashko.understandme.utils.coreui.activityViewModel

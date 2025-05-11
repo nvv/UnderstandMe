@@ -30,6 +30,9 @@ import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.vnamashko.understandme.translation.model.Language
+import com.vnamashko.understandme.translation.views.ErrorCard
+import com.vnamashko.understandme.translation.views.PasteButton
+import com.vnamashko.understandme.translation.views.TranslationError
 import com.vnamashko.undertsndme.language.picker.LanguageFor
 import com.vnamashko.undertsndme.language.picker.LanguageSelectionControl
 import com.vnamashko.undertsndme.translation.screen.R

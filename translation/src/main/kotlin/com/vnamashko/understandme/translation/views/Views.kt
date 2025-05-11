@@ -1,4 +1,4 @@
-package com.vnamashko.understandme.translation.screen
+package com.vnamashko.understandme.translation.views
 
 import androidx.compose.animation.Crossfade
 import androidx.compose.animation.animateColorAsState
