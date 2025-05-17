@@ -9,6 +9,8 @@ import javax.inject.Inject
 
 interface NetworkConnectionManager {
     fun isInternetAvailable(): Boolean
+
+    fun isWifiConnected(): Boolean
 }
 
 class NetworkConnectionManagerImpl @Inject constructor(context: Context): NetworkConnectionManager {
@@ -21,5 +23,13 @@ class NetworkConnectionManagerImpl @Inject constructor(context: Context): Networ
         val network = connectivityManager.activeNetwork ?: return false
         val capabilities = connectivityManager.getNetworkCapabilities(network) ?: return false
         return capabilities.hasCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET)
+    }
+
+    @RequiresPermission(Manifest.permission.ACCESS_NETWORK_STATE)
+    override fun isWifiConnected(): Boolean {
+        val network = connectivityManager.activeNetwork ?: return false
+        val capabilities = connectivityManager.getNetworkCapabilities(network) ?: return false
+
+        return capabilities.hasTransport(NetworkCapabilities.TRANSPORT_WIFI)
     }
 }

@@ -54,6 +54,7 @@ import com.vnamashko.understandme.stt.RecognitionResult
 import com.vnamashko.understandme.stt.SpeechRecognitionListener
 import com.vnamashko.understandme.translation.model.Language
 import com.vnamashko.understandme.translation.model.Screen
+import com.vnamashko.understandme.translation.views.LanguageModelDownloadDialog
 import com.vnamashko.understandme.translation.views.TranslationError
 import com.vnamashko.understandme.translation.vm.TranslateViewModel
 import com.vnamashko.understandme.translation.vm.UiEffect
@@ -63,6 +64,7 @@ import com.vnamashko.undertsndme.language.picker.DownloadModelDialog
 import com.vnamashko.undertsndme.language.picker.LanguageFor
 import com.vnamashko.undertsndme.language.picker.LanguagePickerControl
 import com.vnamashko.undertsndme.translation.screen.R.string.error_translating_text
+import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.filterNotNull
@@ -88,6 +90,8 @@ fun TranslationHostScreen(
 
     var selectFor by remember { mutableStateOf<LanguageFor?>(null) }
     var listeningPartialResult by remember { mutableStateOf<String?>(null) }
+
+    val showDownloadModelDialogAction by viewModel.showDownloadModelDialogAction.collectAsStateWithLifecycle()
 
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
     val scope = rememberCoroutineScope()
@@ -120,6 +124,26 @@ fun TranslationHostScreen(
     val selectForTarget = { target: LanguageFor? ->
         selectFor = target
         showBottomSheet = true
+    }
+
+    if (showDownloadModelDialogAction != null) {
+        LanguageModelDownloadDialog(
+            onDismiss = viewModel::resetModelDownloadDialog,
+            onDownloadNow = {
+                scope.launch {
+                    showDownloadModelDialogAction?.invoke()
+                    viewModel.resetModelDownloadDialog()
+                }
+            },
+            onAlwaysDownload = {
+                scope.launch {
+                    showDownloadModelDialogAction?.invoke()
+                    viewModel.resetModelDownloadDialog()
+                    viewModel.allowDataDownload()
+                }
+            },
+            onDownloadOnWifi = viewModel::resetModelDownloadDialog,
+        )
     }
 
     Scaffold(

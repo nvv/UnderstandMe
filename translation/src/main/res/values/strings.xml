@@ -9,4 +9,11 @@
     <string name="error_translating_text">Error translating entered text.</string>
     <string name="error_translating_title">Can\'t translate</string>
     <string name="error_try_again">Try again</string>
+
+    <string name="dialog_download_language_mode">Download Language Model</string>
+    <string name="dialog_download_language_mode_description">To translate to or from this language, a language model needs to be downloaded. Once downloaded, translations will be available even when you\'re offline. The typical download size is around 80 MB.</string>
+    <string name="dialog_download_wifi_only">Wi-Fi only</string>
+    <string name="dialog_download_now_only">Only now</string>
+    <string name="dialog_download_always">Always</string>
+
 </resources>

@@ -25,6 +25,7 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.filterNotNull
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
@@ -52,6 +53,9 @@ class TranslateViewModel @Inject constructor(
     val sourceLanguage = _sourceLanguage.asStateFlow()
     private val _targetLanguage = MutableStateFlow<Language?>(null)
     val targetLanguage = _targetLanguage.asStateFlow()
+
+    private val _showDownloadModelDialogAction = MutableStateFlow<(suspend () -> Unit)?>(null)
+    val showDownloadModelDialogAction: StateFlow<(suspend () -> Unit)?> = _showDownloadModelDialogAction
 
     val proposedSourceLanguage: StateFlow<Language?> = combine(
         translator.detectedLanguage,
@@ -128,28 +132,65 @@ class TranslateViewModel @Inject constructor(
     }
 
     fun selectSourceLanguage(language: Language) {
-        if (language == _targetLanguage.value) {
-            flipLanguages()
-        } else {
-            _sourceLanguage.value = language
-            viewModelScope.launch {
-                dataStore.saveSourceLanguage(language.code)
-                recentLanguageDao.insertLanguage(language.toRecentLanguage())
-                recentLanguageDao.trimLanguages()
+        viewModelScope.launch {
+            if (shouldShowModelDownloadDialog(language)) {
+                _showDownloadModelDialogAction.value = {
+                    saveSourceLanguage(language)
+                }
+            } else {
+                saveSourceLanguage(language)
             }
         }
     }
 
+    private suspend fun saveSourceLanguage(language: Language) {
+        if (language == _targetLanguage.value) {
+            flipLanguages()
+        } else {
+            _sourceLanguage.value = language
+            dataStore.saveSourceLanguage(language.code)
+            recentLanguageDao.insertLanguage(language.toRecentLanguage())
+            recentLanguageDao.trimLanguages()
+        }
+    }
+
     fun selectTargetLanguage(language: Language) {
+        viewModelScope.launch {
+            if (shouldShowModelDownloadDialog(language)) {
+                _showDownloadModelDialogAction.value = {
+                    saveTargetLanguage(language)
+                }
+            } else {
+                saveTargetLanguage(language)
+            }
+        }
+    }
+
+    private suspend fun saveTargetLanguage(language: Language) {
         if (language == _sourceLanguage.value) {
             flipLanguages()
         } else {
             _targetLanguage.value = language
-            viewModelScope.launch {
-                dataStore.saveTargetLanguage(language.code)
-                recentLanguageDao.insertLanguage(language.toRecentLanguage())
-                recentLanguageDao.trimLanguages()
-            }
+            dataStore.saveTargetLanguage(language.code)
+            recentLanguageDao.insertLanguage(language.toRecentLanguage())
+            recentLanguageDao.trimLanguages()
+        }
+    }
+
+    private suspend fun shouldShowModelDownloadDialog(language: Language): Boolean {
+        return !dataStore.allowDataDownload.first() &&
+                !networkConnectionManager.isWifiConnected() &&
+                language.code != "en" &&
+                !translator.downloadedModels.value.contains(language.code)
+    }
+
+    fun resetModelDownloadDialog() {
+        _showDownloadModelDialogAction.value = null
+    }
+
+    fun allowDataDownload() {
+        viewModelScope.launch {
+            dataStore.saveAllowDataDownload(true)
         }
     }
 
