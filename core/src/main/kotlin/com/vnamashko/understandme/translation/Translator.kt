@@ -123,8 +123,8 @@ class TranslatorImpl @Inject constructor(
 
         val translator = Translation.getClient(options)
         if (networkConnectionManager.isInternetAvailable()) {
-            // TODO: conditional download
             Tasks.await(translator.downloadModelIfNeeded())
+            _downloadedModels.value = getDownloadedModels()
         }
         translator
     }.shareIn(externalScope, SharingStarted.Eagerly, 1)
