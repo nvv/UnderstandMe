@@ -1,6 +1,7 @@
 package com.vnamashko.understandme.translation.vm
 
 import android.content.res.Resources
+import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.vnamashko.understandme.data.dao.RecentLanguageDao
 import com.vnamashko.understandme.data.model.toRecentLanguage
@@ -40,7 +41,7 @@ class TranslateViewModel @Inject constructor(
     private val tts: Tts,
     private val resources: Resources,
     private val recentLanguageDao: RecentLanguageDao,
-) : androidx.lifecycle.ViewModel() {
+) : ViewModel() {
 
     private val _effect = MutableSharedFlow<UiEffect>()
     val effect = _effect.asSharedFlow()
