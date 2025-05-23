@@ -14,6 +14,7 @@ material = "1.12.0"
 coroutines = "1.10.1"
 mlkit-translate = "17.0.3"
 mlkit-language-id = "17.0.6"
+mlkit-rewriting = "1.0.0-beta1"
 room = "2.7.0"
 hilt = "2.51.1"
 hilt-navigation = "1.2.0"
@@ -22,6 +23,8 @@ uiTooling = "1.7.8"
 immutableCollections = "0.3.7"
 ksp = "2.0.21-1.0.27"
 kotlinx-serialization = "1.6.3"
+camerax = "1.4.2"
+accompanistPermissions = "0.36.0"
 
 [libraries]
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
@@ -30,6 +33,11 @@ androidx-junit = { group = "androidx.test.ext", name = "junit", version.ref = "j
 androidx-espresso-core = { group = "androidx.test.espresso", name = "espresso-core", version.ref = "espressoCore" }
 androidx-lifecycle-runtime-ktx = { group = "androidx.lifecycle", name = "lifecycle-runtime-ktx", version.ref = "lifecycleRuntimeKtx" }
 androidx-activity-compose = { group = "androidx.activity", name = "activity-compose", version.ref = "activityCompose" }
+androidx-camera-camera2 = { group = "androidx.camera", name = "camera-camera2", version.ref = "camerax" }
+androidx-camera-lifecycle = { group = "androidx.camera", name = "camera-lifecycle", version.ref = "camerax" }
+androidx-camera-view = { group = "androidx.camera", name = "camera-view", version.ref = "camerax" }
+androidx-camera-extensions = { group = "androidx.camera", name = "camera-extensions", version.ref = "camerax" }
+accompanist = { group = "com.google.accompanist", name = "accompanist-permissions", version.ref = "accompanistPermissions" }
 androidx-compose-bom = { group = "androidx.compose", name = "compose-bom", version.ref = "composeBom" }
 androidx-compose-navigation = { group = "androidx.navigation", name = "navigation-compose", version.ref = "composeNavigation" }
 androidx-ui = { group = "androidx.compose.ui", name = "ui" }
@@ -44,6 +52,7 @@ material = { group = "com.google.android.material", name = "material", version.r
 kotlinx-coroutines = { group = "org.jetbrains.kotlinx", name = "kotlinx-coroutines-android", version.ref = "coroutines" }
 mlkit-translate = { group = "com.google.mlkit", name = "translate", version.ref = "mlkit-translate" }
 mlkit-language-id = { group = "com.google.mlkit", name = "language-id", version.ref = "mlkit-language-id" }
+mlkit-rewriting = { group = "com.google.mlkit", name = "genai-rewriting", version.ref = "mlkit-rewriting" }
 hilt-android = { group = "com.google.dagger", name = "hilt-android", version.ref = "hilt" }
 hilt-compiler = { group = "com.google.dagger", name = "hilt-android-compiler", version.ref = "hilt" }
 hilt-navigation-compose = { group = "androidx.hilt", name = "hilt-navigation-compose", version.ref = "hilt-navigation" }

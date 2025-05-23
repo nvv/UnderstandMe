@@ -1,5 +1,5 @@
 plugins {
-    alias(libs.plugins.android.application)
+    alias(libs.plugins.android.library)
     alias(libs.plugins.kotlin.android)
     alias(libs.plugins.kotlin.compose)
     alias(libs.plugins.hilt)
@@ -8,17 +8,14 @@ plugins {
 }
 
 android {
-    namespace = "com.vnamashko.understandme"
-    compileSdk = 35
+    namespace = "com.vnamashko.understandme.camera"
+    compileSdk = 35/**/
 
     defaultConfig {
-        applicationId = "com.vnamashko.understandme"
         minSdk = 29
-        targetSdk = 35
-        versionCode = 2
-        versionName = "0.0.1"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+        consumerProguardFiles("consumer-rules.pro")
     }
 
     buildTypes {
@@ -43,17 +40,11 @@ android {
 }
 
 dependencies {
-    implementation(project(":language-picker"))
-    implementation(project(":translation"))
-    implementation(project(":core"))
-    implementation(project(":theme"))
-    implementation(project(":camera"))
 
-    implementation(libs.hilt.android)
-    implementation(libs.hilt.navigation.compose)
-    kapt(libs.hilt.compiler)
-
+    implementation(libs.accompanist)
     implementation(libs.androidx.core.ktx)
+    implementation(libs.androidx.appcompat)
+    implementation(libs.material)
     implementation(libs.androidx.lifecycle.runtime.ktx)
     implementation(libs.androidx.activity.compose)
     implementation(platform(libs.androidx.compose.bom))
@@ -62,20 +53,19 @@ dependencies {
     implementation(libs.androidx.ui.graphics)
     implementation(libs.androidx.ui.tooling.preview)
     implementation(libs.androidx.material3)
-    implementation(libs.androidx.datastore)
     implementation(libs.immutable.collections)
     implementation(libs.kotlinx.serialization)
+
+    implementation(libs.androidx.camera.view)
+    implementation(libs.androidx.camera.lifecycle)
+    implementation(libs.androidx.camera.extensions)
+    implementation(libs.androidx.camera.camera2)
+
+    implementation(libs.hilt.android)
+    implementation(libs.hilt.navigation.compose)
+    kapt(libs.hilt.compiler)
 
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
-    androidTestImplementation(platform(libs.androidx.compose.bom))
-    androidTestImplementation(libs.androidx.ui.test.junit4)
-    debugImplementation(libs.androidx.ui.tooling)
-    debugImplementation(libs.androidx.ui.test.manifest)
-}
-
-// Allow references to generated code
-kapt {
-    correctErrorTypes = true
 }

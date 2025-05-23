@@ -21,6 +21,7 @@ dependencyResolutionManagement {
 
 rootProject.name = "Understand Me"
 include(":app")
+include(":camera")
 include(":core")
 include(":core-ui")
 include(":theme")
