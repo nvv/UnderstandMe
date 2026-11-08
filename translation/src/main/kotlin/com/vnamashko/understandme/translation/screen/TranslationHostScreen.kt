@@ -5,6 +5,7 @@ import android.content.Context
 import android.content.ContextWrapper
 import android.content.Intent
 import android.speech.tts.TextToSpeech
+import android.widget.Toast
 import androidx.compose.animation.EnterTransition
 import androidx.compose.animation.ExitTransition
 import androidx.compose.foundation.clickable
@@ -63,6 +64,7 @@ import com.vnamashko.undertsndme.language.picker.DeleteModelDialog
 import com.vnamashko.undertsndme.language.picker.DownloadModelDialog
 import com.vnamashko.undertsndme.language.picker.LanguageFor
 import com.vnamashko.undertsndme.language.picker.LanguagePickerControl
+import com.vnamashko.undertsndme.translation.screen.R.string.dialog_download_wifi_only_message
 import com.vnamashko.undertsndme.translation.screen.R.string.error_translating_text
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.delay
@@ -105,6 +107,8 @@ fun TranslationHostScreen(
 
     val clipboardManager = LocalClipboardManager.current
     val lifecycleOwner = LocalLifecycleOwner.current
+    val context = LocalContext.current
+    val wifiOnlyMessage = stringResource(dialog_download_wifi_only_message)
 
     var openDeleteModelDialogForLanguage by remember { mutableStateOf<Language?>(null) }
     var openDownloadModelDialogForLanguage by remember { mutableStateOf<Language?>(null) }
@@ -142,7 +146,10 @@ fun TranslationHostScreen(
                     viewModel.allowDataDownload()
                 }
             },
-            onDownloadOnWifi = viewModel::resetModelDownloadDialog,
+            onDownloadOnWifi = {
+                viewModel.resetModelDownloadDialog()
+                Toast.makeText(context, wifiOnlyMessage, Toast.LENGTH_LONG).show()
+            },
         )
     }
 
@@ -351,8 +358,6 @@ fun TranslationHostScreen(
                 isPasteAvailable = clipboardManager.hasText()
             }
         }
-
-        val context = LocalContext.current
 
         LaunchedEffect(Unit) {
             val activity = context.findActivity()
