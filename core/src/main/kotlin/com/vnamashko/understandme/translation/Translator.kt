@@ -10,6 +10,7 @@ import com.google.mlkit.nl.translate.TranslateRemoteModel
 import com.google.mlkit.nl.translate.Translation
 import com.google.mlkit.nl.translate.TranslatorOptions
 import com.vnamashko.understandme.coroutines.AppCoroutinesScope
+import com.vnamashko.understandme.translation.model.BatchTranslation
 import com.vnamashko.understandme.translation.model.Language
 import com.vnamashko.understandme.translation.model.LanguagePair
 import com.vnamashko.understandme.translation.model.TranslationResult
@@ -35,6 +36,8 @@ interface Translator {
     val downloadingModels: StateFlow<Set<String>>
 
     suspend fun translate(text: String, pair: LanguagePair): TranslationResult
+
+    suspend fun translateAll(texts: Set<String>, pair: LanguagePair): BatchTranslation
 
     suspend fun identifyLanguage(text: String): String?
 
@@ -83,6 +86,18 @@ class TranslatorImpl @Inject constructor(
         } catch (_: Exception) {
             TranslationResult.Failed
         }
+
+    override suspend fun translateAll(texts: Set<String>, pair: LanguagePair): BatchTranslation {
+        val translations = mutableMapOf<String, String>()
+        for (text in texts) {
+            when (val result = translate(text, pair)) {
+                is TranslationResult.Translated -> translations[text] = result.text
+                TranslationResult.ModelMissing -> return BatchTranslation.ModelMissing
+                TranslationResult.Failed -> Unit
+            }
+        }
+        return BatchTranslation.Translated(translations)
+    }
 
     override suspend fun identifyLanguage(text: String): String? =
         try {
