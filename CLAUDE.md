@@ -37,7 +37,7 @@ An iOS version is built separately; nothing here is shared with it.
 
 Current graph:
 - `app` → `translation`, `language-picker`, `core`, `theme`
-- `translation` → `core`, `core-ui`, `language-picker`
+- `translation` → `core`, `core-ui`, `language-picker`, `theme`
 - `language-picker` → `core`, `theme`
 
 ## Stack
@@ -55,7 +55,7 @@ All versions live in `gradle/libs.versions.toml`. Never hard-code a version in a
 ./gradlew assembleDebug        # build
 ./gradlew test                 # unit tests
 ./gradlew bundleRelease        # release AAB (what .github/workflows/release.yml runs)
-./gradlew lint                 # currently fails on 1 existing error, see docs/refactor-backlog.md
+./gradlew lint                 # Android lint (passes; keep it that way)
 ```
 
 **Verification stops at Gradle.** The user tests on devices personally. Never install, launch or

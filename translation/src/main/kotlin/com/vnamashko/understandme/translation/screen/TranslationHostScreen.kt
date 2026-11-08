@@ -8,25 +8,15 @@ import android.speech.tts.TextToSpeech
 import android.widget.Toast
 import androidx.compose.animation.EnterTransition
 import androidx.compose.animation.ExitTransition
-import androidx.compose.foundation.clickable
-import androidx.compose.foundation.interaction.MutableInteractionSource
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.padding
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.filled.Close
+import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.ModalBottomSheet
-import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarDuration
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
-import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -39,7 +29,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavDestination.Companion.hasRoute
 import androidx.navigation.compose.NavHost
@@ -63,11 +52,8 @@ import com.vnamashko.undertsndme.language.picker.LanguagePickerControl
 import com.vnamashko.undertsndme.language.picker.LanguageSelectionActions
 import com.vnamashko.undertsndme.translation.screen.R.string.dialog_download_wifi_only_message
 import com.vnamashko.undertsndme.translation.screen.R.string.error_translating_text
-import kotlinx.coroutines.coroutineScope
-import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.flow.flowOf
-import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -103,16 +89,6 @@ fun TranslationHostScreen(
 
     var openDeleteModelDialogForLanguage by remember { mutableStateOf<Language?>(null) }
     var openDownloadModelDialogForLanguage by remember { mutableStateOf<Language?>(null) }
-
-    val hasBackNavigation by navController.currentBackStackEntryFlow.map { nav -> !nav.destination.hasRoute<Screen.Home>() }
-        .collectAsStateWithLifecycle(false)
-
-    val hasClearIcon by combine(
-        navController.currentBackStackEntryFlow,
-        viewModel.originalText
-    ) { nav, text ->
-        nav.destination.hasRoute<Screen.InteractiveTranslate>() && text.isNotEmpty()
-    }.collectAsStateWithLifecycle(false)
 
     val listeningPartialResults = remember(speechRecognitionListener) {
         speechRecognitionListener?.partialResult ?: flowOf(null)
@@ -152,56 +128,14 @@ fun TranslationHostScreen(
         )
     }
 
-    Scaffold(
-        snackbarHost = {
-            SnackbarHost(hostState = snackbarHostState)
-        },
-        topBar = {
-            TopAppBar(
-                title = {
-                    Row(
-                        modifier = Modifier.padding(horizontal = 16.dp),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        if (hasClearIcon) {
-                            Spacer(Modifier.weight(1f))
-                            Icon(
-                                imageVector = Icons.Default.Close,
-                                contentDescription = "Clear",
-                                modifier = Modifier.clickable(
-                                    onClick = {
-                                        viewModel.translate("")
-                                    },
-                                    indication = null,
-                                    interactionSource = remember { MutableInteractionSource() }
-                                )
-                            )
-                        }
-                    }
-                },
-                navigationIcon = {
-                    if (hasBackNavigation) {
-                        IconButton(
-                            onClick = { navController.popBackStack() },
-                            modifier = Modifier.padding(start = 16.dp)
-                        ) {
-                            Icon(
-                                Icons.AutoMirrored.Default.ArrowBack,
-                                contentDescription = "Back"
-                            )
-                        }
-                    }
-                }
-            )
-        },
-        modifier = Modifier.fillMaxSize()
-    ) { innerPadding ->
+    // No top bar here: each screen draws its own.
+    Box(modifier = Modifier.fillMaxSize()) {
         NavHost(
             navController = navController,
             startDestination = Screen.Home,
             enterTransition = { EnterTransition.None },
             exitTransition = { ExitTransition.None },
-            modifier = Modifier.padding(innerPadding)
+            modifier = Modifier.fillMaxSize()
         ) {
             composable<Screen.Home> {
                 HomeRoute(
@@ -215,6 +149,7 @@ fun TranslationHostScreen(
                 InteractiveTranslationRoute(
                     error = errorState,
                     languageActions = languageActions,
+                    onBack = { navController.popBackStack() },
                     modifier = Modifier.fillMaxWidth(),
                 )
             }
@@ -224,6 +159,7 @@ fun TranslationHostScreen(
                     startListening = startListening,
                     stopListening = stopListening,
                     languageActions = languageActions,
+                    onBack = { navController.popBackStack() },
                     modifier = Modifier.fillMaxWidth(),
                 )
             }
@@ -235,10 +171,18 @@ fun TranslationHostScreen(
                         navController.navigate(Screen.InteractiveTranslate)
                     },
                     languageActions = languageActions,
+                    onBack = { navController.popBackStack() },
                     modifier = Modifier.fillMaxWidth(),
                 )
             }
         }
+
+        SnackbarHost(
+            hostState = snackbarHostState,
+            modifier = Modifier
+                .align(Alignment.BottomCenter)
+                .navigationBarsPadding(),
+        )
 
         if (showBottomSheet) {
             ModalBottomSheet(

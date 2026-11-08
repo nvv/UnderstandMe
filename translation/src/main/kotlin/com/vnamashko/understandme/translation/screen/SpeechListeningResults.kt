@@ -9,6 +9,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -22,6 +23,7 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.vnamashko.understandme.translation.model.Language
 import com.vnamashko.understandme.translation.views.MicButton
+import com.vnamashko.understandme.translation.views.TranslationTopBar
 import com.vnamashko.understandme.translation.vm.TranslateViewModel
 import com.vnamashko.understandme.utils.coreui.activityViewModel
 import com.vnamashko.undertsndme.language.picker.LanguageSelectionActions
@@ -34,6 +36,7 @@ fun SpeechListeningResultsRoute(
     startListening: (Language?) -> Unit,
     onEditText: () -> Unit,
     languageActions: LanguageSelectionActions,
+    onBack: () -> Unit,
     modifier: Modifier = Modifier,
     viewModel: TranslateViewModel = activityViewModel(),
 ) {
@@ -50,6 +53,7 @@ fun SpeechListeningResultsRoute(
         playbackTranslatedText = viewModel::playbackTranslated,
         onStartListening = { startListening(languageState.source) },
         editText = onEditText,
+        onBack = onBack,
         modifier = modifier,
     )
 }
@@ -64,56 +68,63 @@ fun SpeechListeningResults(
     playbackTranslatedText: () -> Unit,
     onStartListening: () -> Unit,
     editText: () -> Unit,
+    onBack: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     val clipboardManager = LocalClipboardManager.current
 
-    Column(
-        modifier = modifier
-            .padding(24.dp)
-            .fillMaxSize()
-    ) {
-        Text(
-            text = text,
-            style = MaterialTheme.typography.titleLarge,
-            modifier = modifier.padding(16.dp).pointerInput(Unit) {
-                detectTapGestures(onTap = { _ -> editText() })
-            }
-        )
-
-        TextToolbarControl(
-            onPlaybackClicked = playbackOriginalText,
-            onCopyClicked = { clipboardManager.setText(AnnotatedString(text)) },
-            tint = MaterialTheme.colorScheme.onSurface,
-            modifier = Modifier.padding(bottom = 12.dp)
-        )
-
-        Box(modifier = Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
-            HorizontalDivider(
-                color = MaterialTheme.colorScheme.primary,
-                thickness = 1.5.dp,
-                modifier = Modifier.fillMaxWidth(0.5f)
+    Scaffold(
+        topBar = { TranslationTopBar(onBack = onBack) },
+        modifier = modifier,
+    ) { innerPadding ->
+        Column(
+            modifier = Modifier
+                .padding(innerPadding)
+                .padding(24.dp)
+                .fillMaxSize()
+        ) {
+            Text(
+                text = text,
+                style = MaterialTheme.typography.titleLarge,
+                modifier = modifier.padding(16.dp).pointerInput(Unit) {
+                    detectTapGestures(onTap = { _ -> editText() })
+                }
             )
+
+            TextToolbarControl(
+                onPlaybackClicked = playbackOriginalText,
+                onCopyClicked = { clipboardManager.setText(AnnotatedString(text)) },
+                tint = MaterialTheme.colorScheme.onSurface,
+                modifier = Modifier.padding(bottom = 12.dp)
+            )
+
+            Box(modifier = Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
+                HorizontalDivider(
+                    color = MaterialTheme.colorScheme.primary,
+                    thickness = 1.5.dp,
+                    modifier = Modifier.fillMaxWidth(0.5f)
+                )
+            }
+
+            Text(
+                text = translation,
+                style = MaterialTheme.typography.titleLarge.copy(color = MaterialTheme.colorScheme.primary),
+                modifier = modifier.padding(16.dp)
+            )
+
+            TextToolbarControl(
+                onPlaybackClicked = playbackTranslatedText,
+                onCopyClicked = { clipboardManager.setText(AnnotatedString(translation)) },
+                tint = MaterialTheme.colorScheme.primary
+            )
+
+            Spacer(modifier = Modifier.weight(1f))
+            LanguageSelectionControl(
+                state = languageState,
+                actions = languageActions,
+            )
+            MicButton(isSpeechToTextListening = false, onClicked = onStartListening)
         }
-
-        Text(
-            text = translation,
-            style = MaterialTheme.typography.titleLarge.copy(color = MaterialTheme.colorScheme.primary),
-            modifier = modifier.padding(16.dp)
-        )
-
-        TextToolbarControl(
-            onPlaybackClicked = playbackTranslatedText,
-            onCopyClicked = { clipboardManager.setText(AnnotatedString(translation)) },
-            tint = MaterialTheme.colorScheme.primary
-        )
-
-        Spacer(modifier = Modifier.weight(1f))
-        LanguageSelectionControl(
-            state = languageState,
-            actions = languageActions,
-        )
-        MicButton(isSpeechToTextListening = false, onClicked = onStartListening)
     }
 }
 
@@ -132,7 +143,8 @@ fun SpeechListeningResultsPreview() {
             playbackOriginalText = {},
             playbackTranslatedText = {},
             onStartListening = {},
-            editText = {}
+            editText = {},
+            onBack = {},
         )
     }
 }

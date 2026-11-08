@@ -10,6 +10,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -25,6 +26,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.vnamashko.understandme.translation.model.Language
 import com.vnamashko.understandme.translation.views.MicButton
 import com.vnamashko.understandme.translation.views.PasteButton
+import com.vnamashko.understandme.translation.views.TranslationTopBar
 import com.vnamashko.understandme.translation.views.rememberIsPasteAvailable
 import com.vnamashko.understandme.translation.vm.TranslateViewModel
 import com.vnamashko.understandme.utils.coreui.activityViewModel
@@ -95,35 +97,41 @@ fun HomeScreen(
         }
     }
 
-    Column(
-        modifier = modifier
-            .padding(24.dp)
-            .fillMaxSize()
-            .pointerInput(Unit) {
-                detectTapGestures(onTap = { _ -> goToInteractiveTranslation() })
+    Scaffold(
+        topBar = { TranslationTopBar(onBack = null) },
+        modifier = modifier,
+    ) { innerPadding ->
+        Column(
+            modifier = Modifier
+                .padding(innerPadding)
+                .padding(24.dp)
+                .fillMaxSize()
+                .pointerInput(Unit) {
+                    detectTapGestures(onTap = { _ -> goToInteractiveTranslation() })
+                }
+        ) {
+            Text(
+                stringResource(R.string.enter_text),
+                style = MaterialTheme.typography.titleLarge,
+                modifier = Modifier.padding(16.dp)
+            )
+
+            if (isPasteAvailable) {
+                PasteButton(onClicked = pasteToInteractiveTranslation)
             }
-    ) {
-        Text(
-            stringResource(R.string.enter_text),
-            style = MaterialTheme.typography.titleLarge,
-            modifier = Modifier.padding(16.dp)
-        )
 
-        if (isPasteAvailable) {
-            PasteButton(onClicked = pasteToInteractiveTranslation)
+            Spacer(modifier = Modifier.weight(1f))
+            LanguageSelectionControl(
+                // Home never suggests a detected language.
+                state = languageState.copy(proposedSource = null),
+                actions = languageActions,
+            )
+            MicButton(
+                isSpeechToTextListening = false,
+                isEnabled = languageState.target != null && sourceLanguage != null,
+                onClicked = listenButtonClicked
+            )
         }
-
-        Spacer(modifier = Modifier.weight(1f))
-        LanguageSelectionControl(
-            // Home never suggests a detected language.
-            state = languageState.copy(proposedSource = null),
-            actions = languageActions,
-        )
-        MicButton(
-            isSpeechToTextListening = false,
-            isEnabled = languageState.target != null && sourceLanguage != null,
-            onClicked = listenButtonClicked
-        )
     }
 }
 

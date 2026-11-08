@@ -5,6 +5,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -16,6 +17,7 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.vnamashko.understandme.translation.model.Language
 import com.vnamashko.understandme.translation.views.MicButton
+import com.vnamashko.understandme.translation.views.TranslationTopBar
 import com.vnamashko.understandme.translation.vm.TranslateViewModel
 import com.vnamashko.understandme.utils.coreui.activityViewModel
 import com.vnamashko.undertsndme.language.picker.LanguageSelectionActions
@@ -35,6 +37,7 @@ fun SpeechListeningRoute(
     startListening: (Language?) -> Unit,
     stopListening: () -> Unit,
     languageActions: LanguageSelectionActions,
+    onBack: () -> Unit,
     modifier: Modifier = Modifier,
     viewModel: TranslateViewModel = activityViewModel(),
 ) {
@@ -47,6 +50,7 @@ fun SpeechListeningRoute(
         languageActions = languageActions,
         onStartListening = { startListening(languageState.source) },
         onStopListening = stopListening,
+        onBack = onBack,
         modifier = modifier,
     )
 }
@@ -58,29 +62,36 @@ fun SpeechListeningScreenScreen(
     languageActions: LanguageSelectionActions,
     onStartListening: () -> Unit,
     onStopListening: () -> Unit,
+    onBack: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     LaunchedEffect(Unit) {
         onStartListening()
     }
 
-    Column(
-        modifier = modifier
-            .padding(24.dp)
-            .fillMaxSize()
-    ) {
-        Text(
-            partialResult ?: stringResource(R.string.speak),
-            style = MaterialTheme.typography.titleLarge,
-            modifier = Modifier.padding(16.dp)
-        )
+    Scaffold(
+        topBar = { TranslationTopBar(onBack = onBack) },
+        modifier = modifier,
+    ) { innerPadding ->
+        Column(
+            modifier = Modifier
+                .padding(innerPadding)
+                .padding(24.dp)
+                .fillMaxSize()
+        ) {
+            Text(
+                partialResult ?: stringResource(R.string.speak),
+                style = MaterialTheme.typography.titleLarge,
+                modifier = Modifier.padding(16.dp)
+            )
 
-        Spacer(modifier = Modifier.weight(1f))
-        LanguageSelectionControl(
-            state = languageState,
-            actions = languageActions,
-        )
-        MicButton(isSpeechToTextListening = true, onClicked = onStopListening)
+            Spacer(modifier = Modifier.weight(1f))
+            LanguageSelectionControl(
+                state = languageState,
+                actions = languageActions,
+            )
+            MicButton(isSpeechToTextListening = true, onClicked = onStopListening)
+        }
     }
 }
 
@@ -96,7 +107,8 @@ fun SpeechListeningScreenPreview() {
             ),
             languageActions = LanguageSelectionActions.NoOp,
             onStopListening = {},
-            onStartListening = {}
+            onStartListening = {},
+            onBack = {},
         )
     }
 }

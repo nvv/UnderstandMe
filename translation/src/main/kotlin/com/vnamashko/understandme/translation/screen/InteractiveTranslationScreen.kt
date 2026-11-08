@@ -10,6 +10,7 @@ import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
+import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -31,9 +32,11 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.vnamashko.understandme.translation.model.Language
+import com.vnamashko.understandme.translation.views.ClearTextAction
 import com.vnamashko.understandme.translation.views.ErrorCard
 import com.vnamashko.understandme.translation.views.PasteButton
 import com.vnamashko.understandme.translation.views.TranslationError
+import com.vnamashko.understandme.translation.views.TranslationTopBar
 import com.vnamashko.understandme.translation.views.rememberIsPasteAvailable
 import com.vnamashko.understandme.translation.vm.TranslateViewModel
 import com.vnamashko.understandme.utils.coreui.activityViewModel
@@ -52,6 +55,7 @@ import kotlinx.coroutines.flow.debounce
 fun InteractiveTranslationRoute(
     error: TranslationError?,
     languageActions: LanguageSelectionActions,
+    onBack: () -> Unit,
     modifier: Modifier = Modifier,
     viewModel: TranslateViewModel = activityViewModel(),
 ) {
@@ -69,6 +73,8 @@ fun InteractiveTranslationRoute(
         languageActions = languageActions,
         isPasteAvailable = rememberIsPasteAvailable(),
         error = error,
+        onBack = onBack,
+        onClear = { viewModel.translate("") },
         modifier = modifier,
     )
 }
@@ -84,27 +90,42 @@ fun InteractiveTranslationScreen(
     languageActions: LanguageSelectionActions,
     isPasteAvailable: Boolean,
     error: TranslationError?,
+    onBack: () -> Unit,
+    onClear: () -> Unit,
     modifier: Modifier = Modifier
 ) {
-    Column(
-        modifier = modifier
-            .padding(24.dp)
-            .fillMaxSize()
-    ) {
-        TranslationInputOutput(
-            initialText = initialText,
-            onTextChanged = onTextChanged,
-            playbackOriginalText = playbackOriginalText,
-            playbackTranslatedText = playbackTranslatedText,
-            translation = translation,
-            error = error,
-            isPasteAvailable = isPasteAvailable
-        )
-        Spacer(modifier = Modifier.weight(1f))
-        LanguageSelectionControl(
-            state = languageState,
-            actions = languageActions,
-        )
+    Scaffold(
+        topBar = { TranslationTopBar(
+                onBack = onBack,
+                actions = {
+                    if (!initialText.isNullOrEmpty()) {
+                        ClearTextAction(onClear = onClear)
+                    }
+                },
+            ) },
+        modifier = modifier,
+    ) { innerPadding ->
+        Column(
+            modifier = Modifier
+                .padding(innerPadding)
+                .padding(24.dp)
+                .fillMaxSize()
+        ) {
+            TranslationInputOutput(
+                initialText = initialText,
+                onTextChanged = onTextChanged,
+                playbackOriginalText = playbackOriginalText,
+                playbackTranslatedText = playbackTranslatedText,
+                translation = translation,
+                error = error,
+                isPasteAvailable = isPasteAvailable
+            )
+            Spacer(modifier = Modifier.weight(1f))
+            LanguageSelectionControl(
+                state = languageState,
+                actions = languageActions,
+            )
+        }
     }
 }
 
@@ -231,7 +252,9 @@ fun InteractiveTranslationScreenPreview() {
             ),
             languageActions = LanguageSelectionActions.NoOp,
             isPasteAvailable = true,
-            error = null
+            error = null,
+            onBack = {},
+            onClear = {},
         )
     }
 }
@@ -258,7 +281,9 @@ fun InteractiveTranslationScreenErrorPreview() {
                 "Language model not found. If it exists - try to delete and download it again.",
                 "Retry",
                 {}
-                )
+                ),
+            onBack = {},
+            onClear = {},
         )
     }
 }
