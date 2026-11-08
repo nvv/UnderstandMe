@@ -12,15 +12,18 @@ Long-form companion to `CLAUDE.md`. Examples use real names from this codebase w
 - Feature modules (`translation`):
   - `vm/` holds the ViewModel, its state and effects
   - `screen/` holds the host screen, and one file per destination with its route + stateless screen
-  - `views/` holds small composables shared within the feature
+  - `views/` holds small composables shared within the feature, one component per file
+    (`MicButton.kt`, `PasteButton.kt`)
   - `model/` holds navigation routes
-- UI modules (`language-picker`, future `camera`) are hosted by a feature (module kinds and
+- UI modules (`language-picker`, `camera`) are hosted by a feature (module kinds and
   dependency rules: `CLAUDE.md` → Modules):
   - destinations: `<Name>Route` + stateless `<Name>Screen` in one file, optionally with their own
     ViewModel obtained with `hiltViewModel()` (scoped to the navigation entry)
   - shared feature state comes in as parameters (`LanguageSelectionState`, `LanguageSelectionActions`,
     navigation lambdas), never by referencing the feature's ViewModel
   - the hosting feature adds the `composable<Screen.X> { XRoute(...) }` entry in its `NavHost`
+  - components the feature places on its own screens (e.g. the camera's `CameraButton` on Home)
+    live in the UI module's `views/`, one component per file, with their icons and strings
 - Namespace = package prefix = folder (target; two modules violate this today).
 - Sources live in `src/main/kotlin` (target; `app` still uses `src/main/java`).
 - One public top-level type per file, named after the file. Small private helpers may share it.

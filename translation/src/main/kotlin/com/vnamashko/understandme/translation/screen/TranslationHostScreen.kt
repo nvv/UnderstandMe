@@ -39,6 +39,7 @@ import com.vnamashko.understandme.language.picker.R.string.translate_to
 import com.vnamashko.understandme.stt.RecognitionResult
 import com.vnamashko.understandme.stt.SpeechRecognitionListener
 import com.vnamashko.understandme.translation.model.Language
+import com.vnamashko.understandme.camera.screen.CameraRoute
 import com.vnamashko.understandme.translation.model.Screen
 import com.vnamashko.understandme.translation.views.LanguageModelDownloadDialog
 import com.vnamashko.understandme.translation.views.TranslationError
@@ -142,6 +143,7 @@ fun TranslationHostScreen(
                     languageActions = languageActions,
                     onOpenInteractiveTranslation = { navController.navigate(Screen.InteractiveTranslate) },
                     onOpenListening = { navController.navigate(Screen.Listen) },
+                    onOpenCamera = { navController.navigate(Screen.Camera) },
                     modifier = Modifier.fillMaxWidth(),
                 )
             }
@@ -159,6 +161,12 @@ fun TranslationHostScreen(
                     startListening = startListening,
                     stopListening = stopListening,
                     languageActions = languageActions,
+                    onBack = { navController.popBackStack() },
+                    modifier = Modifier.fillMaxWidth(),
+                )
+            }
+            composable<Screen.Camera> {
+                CameraRoute(
                     onBack = { navController.popBackStack() },
                     modifier = Modifier.fillMaxWidth(),
                 )

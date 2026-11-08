@@ -16,4 +16,7 @@ sealed interface Screen {
 
     @Serializable
     data object ListenResults : Screen
+
+    @Serializable
+    data object Camera : Screen
 }
