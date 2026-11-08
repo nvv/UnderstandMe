@@ -3,9 +3,11 @@ package com.vnamashko.understandme.translation.views
 import android.content.res.Configuration
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
@@ -13,6 +15,7 @@ import androidx.compose.material.icons.filled.Close
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
@@ -35,9 +38,11 @@ import com.vnamashko.undertsndme.translation.screen.R
 fun TranslationTopBar(
     onBack: (() -> Unit)?,
     modifier: Modifier = Modifier,
+    isLoading: Boolean = false,
     actions: @Composable RowScope.() -> Unit = {},
 ) {
-    TopAppBar(
+    Box(modifier = modifier) {
+        TopAppBar(
         title = {
             Row(
                 modifier = Modifier.padding(horizontal = 16.dp),
@@ -60,8 +65,15 @@ fun TranslationTopBar(
                 }
             }
         },
-        modifier = modifier,
-    )
+        )
+        if (isLoading) {
+            LinearProgressIndicator(
+                modifier = Modifier
+                    .align(Alignment.BottomStart)
+                    .fillMaxWidth(),
+            )
+        }
+    }
 }
 
 /** Clears the entered text. */
@@ -83,6 +95,6 @@ fun ClearTextAction(onClear: () -> Unit, modifier: Modifier = Modifier) {
 @Composable
 private fun TranslationTopBarPreview() {
     AppTheme {
-        TranslationTopBar(onBack = {}, actions = { ClearTextAction(onClear = {}) })
+        TranslationTopBar(onBack = {}, isLoading = true, actions = { ClearTextAction(onClear = {}) })
     }
 }

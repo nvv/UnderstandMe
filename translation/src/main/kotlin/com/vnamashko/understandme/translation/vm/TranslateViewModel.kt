@@ -88,6 +88,10 @@ class TranslateViewModel @Inject constructor(
         LanguageSelectionState(source = source, target = target, proposedSource = proposedSource)
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), LanguageSelectionState())
 
+    val isDownloadingModel: StateFlow<Boolean> = combine(languagePair, translator.downloadingModels) { pair, downloading ->
+        pair != null && (pair.source in downloading || pair.target in downloading)
+    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), false)
+
     val supportedModels =
         combine(
             translator.downloadedModels,

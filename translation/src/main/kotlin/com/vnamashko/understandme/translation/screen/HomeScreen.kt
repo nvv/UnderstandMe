@@ -47,7 +47,10 @@ fun HomeRoute(
     val clipboardManager = LocalClipboardManager.current
     val languageState by viewModel.languageSelection.collectAsStateWithLifecycle()
 
+    val isDownloadingModel by viewModel.isDownloadingModel.collectAsStateWithLifecycle()
+
     HomeScreen(
+        isDownloadingModel = isDownloadingModel,
         isPasteAvailable = rememberIsPasteAvailable(),
         languageState = languageState,
         languageActions = languageActions,
@@ -63,6 +66,7 @@ fun HomeRoute(
 
 @Composable
 fun HomeScreen(
+    isDownloadingModel: Boolean,
     isPasteAvailable: Boolean,
     languageState: LanguageSelectionState,
     languageActions: LanguageSelectionActions,
@@ -98,7 +102,7 @@ fun HomeScreen(
     }
 
     Scaffold(
-        topBar = { TranslationTopBar(onBack = null) },
+        topBar = { TranslationTopBar(onBack = null, isLoading = isDownloadingModel) },
         modifier = modifier,
     ) { innerPadding ->
         Column(
@@ -140,6 +144,7 @@ fun HomeScreen(
 fun HomeScreenPreview() {
     MaterialTheme {
         HomeScreen(
+            isDownloadingModel = false,
             languageState = LanguageSelectionState(
                 source = Language(code = "es", displayName = "Spanish"),
                 target = Language(code = "en", displayName = "English"),

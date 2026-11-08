@@ -44,7 +44,10 @@ fun SpeechListeningRoute(
     val partialResult by partialResults.collectAsStateWithLifecycle(initialValue = null)
     val languageState by viewModel.languageSelection.collectAsStateWithLifecycle()
 
+    val isDownloadingModel by viewModel.isDownloadingModel.collectAsStateWithLifecycle()
+
     SpeechListeningScreenScreen(
+        isDownloadingModel = isDownloadingModel,
         partialResult = partialResult,
         languageState = languageState,
         languageActions = languageActions,
@@ -57,6 +60,7 @@ fun SpeechListeningRoute(
 
 @Composable
 fun SpeechListeningScreenScreen(
+    isDownloadingModel: Boolean,
     partialResult: String?,
     languageState: LanguageSelectionState,
     languageActions: LanguageSelectionActions,
@@ -70,7 +74,7 @@ fun SpeechListeningScreenScreen(
     }
 
     Scaffold(
-        topBar = { TranslationTopBar(onBack = onBack) },
+        topBar = { TranslationTopBar(onBack = onBack, isLoading = isDownloadingModel) },
         modifier = modifier,
     ) { innerPadding ->
         Column(
@@ -100,6 +104,7 @@ fun SpeechListeningScreenScreen(
 fun SpeechListeningScreenPreview() {
     MaterialTheme {
         SpeechListeningScreenScreen(
+            isDownloadingModel = false,
             partialResult = null,
             languageState = LanguageSelectionState(
                 source = Language(code = "es", displayName = "Spanish"),

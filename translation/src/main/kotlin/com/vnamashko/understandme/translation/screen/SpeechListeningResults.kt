@@ -44,7 +44,10 @@ fun SpeechListeningResultsRoute(
     val translatedText by viewModel.translatedText.collectAsStateWithLifecycle()
     val languageState by viewModel.languageSelection.collectAsStateWithLifecycle()
 
+    val isDownloadingModel by viewModel.isDownloadingModel.collectAsStateWithLifecycle()
+
     SpeechListeningResults(
+        isDownloadingModel = isDownloadingModel,
         text = originalText,
         translation = translatedText ?: "",
         languageState = languageState,
@@ -60,6 +63,7 @@ fun SpeechListeningResultsRoute(
 
 @Composable
 fun SpeechListeningResults(
+    isDownloadingModel: Boolean,
     text: String,
     translation: String,
     languageState: LanguageSelectionState,
@@ -74,7 +78,7 @@ fun SpeechListeningResults(
     val clipboardManager = LocalClipboardManager.current
 
     Scaffold(
-        topBar = { TranslationTopBar(onBack = onBack) },
+        topBar = { TranslationTopBar(onBack = onBack, isLoading = isDownloadingModel) },
         modifier = modifier,
     ) { innerPadding ->
         Column(
@@ -133,6 +137,7 @@ fun SpeechListeningResults(
 fun SpeechListeningResultsPreview() {
     MaterialTheme {
         SpeechListeningResults(
+            isDownloadingModel = false,
             text = "Hola, ¿cómo estás?",
             translation = "Hello, how are you?",
             languageState = LanguageSelectionState(

@@ -94,6 +94,8 @@ class TranslatorImpl @Inject constructor(
         }
 
     override suspend fun downloadModelsIfNeeded(pair: LanguagePair) {
+        val missing = setOf(pair.source, pair.target) - _downloadedModels.value.map { it.language }.toSet()
+        _downloadingModels.value += missing
         try {
             clientFor(pair).downloadModelIfNeeded().await()
             refreshDownloadedModels()
@@ -101,6 +103,8 @@ class TranslatorImpl @Inject constructor(
             throw e
         } catch (_: Exception) {
             return
+        } finally {
+            _downloadingModels.value -= missing
         }
     }
 

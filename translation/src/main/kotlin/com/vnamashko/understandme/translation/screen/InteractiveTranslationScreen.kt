@@ -63,7 +63,10 @@ fun InteractiveTranslationRoute(
     val translatedText by viewModel.translatedText.collectAsStateWithLifecycle()
     val languageState by viewModel.languageSelection.collectAsStateWithLifecycle()
 
+    val isDownloadingModel by viewModel.isDownloadingModel.collectAsStateWithLifecycle()
+
     InteractiveTranslationScreen(
+        isDownloadingModel = isDownloadingModel,
         initialText = originalText,
         onTextChanged = viewModel::translate,
         playbackOriginalText = viewModel::playbackOriginal,
@@ -81,6 +84,7 @@ fun InteractiveTranslationRoute(
 
 @Composable
 fun InteractiveTranslationScreen(
+    isDownloadingModel: Boolean,
     initialText: String?,
     onTextChanged: (String) -> Unit,
     playbackOriginalText: () -> Unit,
@@ -97,6 +101,7 @@ fun InteractiveTranslationScreen(
     Scaffold(
         topBar = { TranslationTopBar(
                 onBack = onBack,
+                isLoading = isDownloadingModel,
                 actions = {
                     if (!initialText.isNullOrEmpty()) {
                         ClearTextAction(onClear = onClear)
@@ -241,6 +246,7 @@ private fun TranslationInputOutput(
 fun InteractiveTranslationScreenPreview() {
     MaterialTheme {
         InteractiveTranslationScreen(
+            isDownloadingModel = true,
             initialText = "Hola, ¿cómo estás?",
             onTextChanged = {},
             playbackOriginalText = {},
@@ -265,6 +271,7 @@ fun InteractiveTranslationScreenPreview() {
 fun InteractiveTranslationScreenErrorPreview() {
     MaterialTheme {
         InteractiveTranslationScreen(
+            isDownloadingModel = false,
             initialText = "Hola, ¿cómo estás?",
             onTextChanged = {},
             playbackOriginalText = {},
