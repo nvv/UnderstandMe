@@ -9,7 +9,7 @@ plugins {
 
 android {
     namespace = "com.vnamashko.understandme.coreui"
-    compileSdk = 35
+    compileSdk = 36
 
     defaultConfig {
         minSdk = 29

@@ -29,7 +29,7 @@ An iOS version is built separately; nothing here is shared with it.
 Kotlin 2.4 · AGP 9 (built-in Kotlin, no `kotlin-android` plugin) · Gradle 9.5 (runs on JDK 25) ·
 Hilt with **KSP** (no kapt) · Coroutines/Flow · Jetpack Compose + Material3 · Navigation Compose
 (type-safe `@Serializable` routes) · Room · DataStore Preferences · ML Kit Translate + Language ID ·
-kotlinx-collections-immutable. compileSdk/targetSdk 35, minSdk 29, JVM target 11.
+kotlinx-collections-immutable. compileSdk/targetSdk 36, minSdk 29, JVM target 11.
 
 All versions live in `gradle/libs.versions.toml`. Never hard-code a version in a module build file.
 

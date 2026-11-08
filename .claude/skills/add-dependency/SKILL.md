@@ -15,10 +15,10 @@ argument-hint: <library> [module]
 
 ## 2. Check compatibility before editing
 
-- **compileSdk:** the project is on compileSdk 35. Newer androidx releases often require 36+, and
-  the build then fails in `checkDebugAarMetadata`. Example: `hilt-navigation-compose` 1.4.0 needs
-  36. If that happens, use the newest version that fits, or ask the user about raising compileSdk
-  (that's a separate change).
+- **compileSdk:** the project is on compileSdk 36. Libraries declare a `minCompileSdk` in their AAR
+  metadata. If it's higher, the build fails in `checkDebugAarMetadata`. Check before editing:
+  `unzip -p <lib>.aar META-INF/com/android/build/gradle/aar-metadata.properties`. If it doesn't fit,
+  use the newest version that does, or ask the user about raising compileSdk (a separate change).
 - **Kotlin compiler plugins** (compose, serialization) use `version.ref = "kotlin"`. KSP must
   support the Kotlin version in the catalog.
 - **Annotation processors** use `ksp(...)`. kapt isn't available (AGP 9 built-in Kotlin).

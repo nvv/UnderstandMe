@@ -10,12 +10,12 @@ plugins {
 
 android {
     namespace = "com.vnamashko.understandme"
-    compileSdk = 35
+    compileSdk = 36
 
     defaultConfig {
         applicationId = "com.vnamashko.understandme"
         minSdk = 29
-        targetSdk = 35
+        targetSdk = 36
         versionCode = 3
         versionName = "0.0.1"
 
