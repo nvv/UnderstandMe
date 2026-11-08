@@ -11,6 +11,7 @@ import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.pointer.pointerInput
@@ -18,21 +19,47 @@ import androidx.compose.ui.platform.LocalClipboardManager
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.vnamashko.understandme.translation.model.Language
 import com.vnamashko.understandme.translation.views.MicButton
-import com.vnamashko.undertsndme.language.picker.LanguageFor
+import com.vnamashko.understandme.translation.vm.TranslateViewModel
+import com.vnamashko.understandme.utils.coreui.activityViewModel
+import com.vnamashko.undertsndme.language.picker.LanguageSelectionActions
 import com.vnamashko.undertsndme.language.picker.LanguageSelectionControl
+import com.vnamashko.undertsndme.language.picker.LanguageSelectionState
+
+/** Listening results destination: reads [TranslateViewModel] and wires [SpeechListeningResults]. */
+@Composable
+fun SpeechListeningResultsRoute(
+    startListening: (Language?) -> Unit,
+    onEditText: () -> Unit,
+    languageActions: LanguageSelectionActions,
+    modifier: Modifier = Modifier,
+    viewModel: TranslateViewModel = activityViewModel(),
+) {
+    val originalText by viewModel.originalText.collectAsStateWithLifecycle()
+    val translatedText by viewModel.translatedText.collectAsStateWithLifecycle()
+    val languageState by viewModel.languageSelection.collectAsStateWithLifecycle()
+
+    SpeechListeningResults(
+        text = originalText,
+        translation = translatedText ?: "",
+        languageState = languageState,
+        languageActions = languageActions,
+        playbackOriginalText = viewModel::playbackOriginal,
+        playbackTranslatedText = viewModel::playbackTranslated,
+        onStartListening = { startListening(languageState.source) },
+        editText = onEditText,
+        modifier = modifier,
+    )
+}
 
 @Composable
 fun SpeechListeningResults(
     text: String,
     translation: String,
-    targetLanguage: Language?,
-    sourceLanguage: Language?,
-    proposedSourceLanguage: Language?,
-    selectForTarget: (LanguageFor) -> Unit,
-    selectProposedLanguage: () -> Unit,
-    flipLanguages: () -> Unit,
+    languageState: LanguageSelectionState,
+    languageActions: LanguageSelectionActions,
     playbackOriginalText: () -> Unit,
     playbackTranslatedText: () -> Unit,
     onStartListening: () -> Unit,
@@ -83,12 +110,8 @@ fun SpeechListeningResults(
 
         Spacer(modifier = Modifier.weight(1f))
         LanguageSelectionControl(
-            sourceLanguage = sourceLanguage,
-            proposedSourceLanguage = proposedSourceLanguage,
-            targetLanguage = targetLanguage,
-            selectFor = selectForTarget,
-            selectProposedLanguage = selectProposedLanguage,
-            flipLanguages = flipLanguages
+            state = languageState,
+            actions = languageActions,
         )
         MicButton(isSpeechToTextListening = false, onClicked = onStartListening)
     }
@@ -101,12 +124,11 @@ fun SpeechListeningResultsPreview() {
         SpeechListeningResults(
             text = "Hola, ¿cómo estás?",
             translation = "Hello, how are you?",
-            targetLanguage = Language(code = "en", displayName = "English"),
-            sourceLanguage = Language(code = "es", displayName = "Spanish"),
-            proposedSourceLanguage = null,
-            selectForTarget = {},
-            selectProposedLanguage = {},
-            flipLanguages = {},
+            languageState = LanguageSelectionState(
+                source = Language(code = "es", displayName = "Spanish"),
+                target = Language(code = "en", displayName = "English"),
+            ),
+            languageActions = LanguageSelectionActions.NoOp,
             playbackOriginalText = {},
             playbackTranslatedText = {},
             onStartListening = {},

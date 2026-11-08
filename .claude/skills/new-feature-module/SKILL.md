@@ -36,8 +36,8 @@ the translate flow, use `new-screen` instead. Ask the user if unsure.
 | `vm/<Feature>ViewModel.kt` | `@HiltViewModel`, `state: StateFlow<<Feature>UiState>`, `effects: Flow<<Feature>Effect>` via `Channel(BUFFERED)`, intents `onX()` |
 | `vm/<Feature>UiState.kt`, `vm/<Feature>Effect.kt` | immutable data class with defaults; sealed interface. No strings or lambdas. |
 | `model/Screen.kt` | `@Serializable sealed interface Screen` with `data object` routes |
-| `screen/<Feature>HostScreen.kt` | owns the ViewModel, `NavHost`, `Scaffold`, dialogs, and effect collection |
-| `screen/<Name>Screen.kt` | stateless screens (use `new-screen`) |
+| `screen/<Feature>HostScreen.kt` | `NavHost`, `Scaffold`, shared dialogs/sheets, effect collection, navigation |
+| `screen/<Name>Screen.kt` | `<Name>Route` (reads the ViewModel) + stateless `<Name>Screen` (use `new-screen`) |
 | `views/` | small composables reused inside the feature |
 | `res/values/strings.xml` | keys `<feature>_<what>` |
 

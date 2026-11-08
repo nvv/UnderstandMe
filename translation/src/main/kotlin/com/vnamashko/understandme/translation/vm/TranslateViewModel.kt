@@ -13,6 +13,7 @@ import com.vnamashko.understandme.translation.model.Language
 import com.vnamashko.understandme.translation.model.LanguageModel
 import com.vnamashko.understandme.tts.Tts
 import com.vnamashko.understandme.translation.views.TranslationError
+import com.vnamashko.undertsndme.language.picker.LanguageSelectionState
 import com.vnamashko.undertsndme.translation.screen.R
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.collections.immutable.persistentListOf
@@ -64,6 +65,15 @@ class TranslateViewModel @Inject constructor(
     ) { detected, selected ->
         if (detected != "und" && detected != selected) translator.supportedLanguages.find { it.code == detected } else null
     }.stateIn(viewModelScope, SharingStarted.Lazily, null)
+
+    /** Everything the language bar shows. */
+    val languageSelection: StateFlow<LanguageSelectionState> = combine(
+        sourceLanguage,
+        targetLanguage,
+        proposedSourceLanguage,
+    ) { source, target, proposedSource ->
+        LanguageSelectionState(source = source, target = target, proposedSource = proposedSource)
+    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), LanguageSelectionState())
 
     val supportedModels =
         combine(

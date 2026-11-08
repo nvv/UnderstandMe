@@ -8,25 +8,54 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.vnamashko.understandme.translation.model.Language
 import com.vnamashko.understandme.translation.views.MicButton
-import com.vnamashko.undertsndme.language.picker.LanguageFor
+import com.vnamashko.understandme.translation.vm.TranslateViewModel
+import com.vnamashko.understandme.utils.coreui.activityViewModel
+import com.vnamashko.undertsndme.language.picker.LanguageSelectionActions
 import com.vnamashko.undertsndme.language.picker.LanguageSelectionControl
+import com.vnamashko.undertsndme.language.picker.LanguageSelectionState
 import com.vnamashko.undertsndme.translation.screen.R
+import kotlinx.coroutines.flow.Flow
+
+/**
+ * Listening destination: reads [TranslateViewModel] and wires [SpeechListeningScreenScreen].
+ * The recognizer is owned by the Activity; the host passes its partial results as a plain [Flow]
+ * (referencing `android.speech` types in this file would break its previews).
+ */
+@Composable
+fun SpeechListeningRoute(
+    partialResults: Flow<String?>,
+    startListening: (Language?) -> Unit,
+    stopListening: () -> Unit,
+    languageActions: LanguageSelectionActions,
+    modifier: Modifier = Modifier,
+    viewModel: TranslateViewModel = activityViewModel(),
+) {
+    val partialResult by partialResults.collectAsStateWithLifecycle(initialValue = null)
+    val languageState by viewModel.languageSelection.collectAsStateWithLifecycle()
+
+    SpeechListeningScreenScreen(
+        partialResult = partialResult,
+        languageState = languageState,
+        languageActions = languageActions,
+        onStartListening = { startListening(languageState.source) },
+        onStopListening = stopListening,
+        modifier = modifier,
+    )
+}
 
 @Composable
 fun SpeechListeningScreenScreen(
     partialResult: String?,
-    targetLanguage: Language?,
-    sourceLanguage: Language?,
-    proposedSourceLanguage: Language?,
-    selectForTarget: (LanguageFor) -> Unit,
-    selectProposedLanguage: () -> Unit,
-    flipLanguages: () -> Unit,
+    languageState: LanguageSelectionState,
+    languageActions: LanguageSelectionActions,
     onStartListening: () -> Unit,
     onStopListening: () -> Unit,
     modifier: Modifier = Modifier
@@ -48,12 +77,8 @@ fun SpeechListeningScreenScreen(
 
         Spacer(modifier = Modifier.weight(1f))
         LanguageSelectionControl(
-            sourceLanguage = sourceLanguage,
-            proposedSourceLanguage = proposedSourceLanguage,
-            targetLanguage = targetLanguage,
-            selectFor = selectForTarget,
-            selectProposedLanguage = selectProposedLanguage,
-            flipLanguages = flipLanguages
+            state = languageState,
+            actions = languageActions,
         )
         MicButton(isSpeechToTextListening = true, onClicked = onStopListening)
     }
@@ -65,12 +90,11 @@ fun SpeechListeningScreenPreview() {
     MaterialTheme {
         SpeechListeningScreenScreen(
             partialResult = null,
-            targetLanguage = Language(code = "en", displayName = "English"),
-            sourceLanguage = Language(code = "es", displayName = "Spanish"),
-            proposedSourceLanguage = null,
-            selectForTarget = {},
-            selectProposedLanguage = {},
-            flipLanguages = {},
+            languageState = LanguageSelectionState(
+                source = Language(code = "es", displayName = "Spanish"),
+                target = Language(code = "en", displayName = "English"),
+            ),
+            languageActions = LanguageSelectionActions.NoOp,
             onStopListening = {},
             onStartListening = {}
         )

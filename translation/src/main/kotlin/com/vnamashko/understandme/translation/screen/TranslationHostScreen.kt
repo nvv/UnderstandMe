@@ -37,14 +37,10 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.LocalClipboardManager
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
-import androidx.lifecycle.Lifecycle
-import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import androidx.lifecycle.repeatOnLifecycle
 import androidx.navigation.NavDestination.Companion.hasRoute
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
@@ -64,12 +60,13 @@ import com.vnamashko.undertsndme.language.picker.DeleteModelDialog
 import com.vnamashko.undertsndme.language.picker.DownloadModelDialog
 import com.vnamashko.undertsndme.language.picker.LanguageFor
 import com.vnamashko.undertsndme.language.picker.LanguagePickerControl
+import com.vnamashko.undertsndme.language.picker.LanguageSelectionActions
 import com.vnamashko.undertsndme.translation.screen.R.string.dialog_download_wifi_only_message
 import com.vnamashko.undertsndme.translation.screen.R.string.error_translating_text
 import kotlinx.coroutines.coroutineScope
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.filterNotNull
+import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
 
@@ -82,16 +79,12 @@ fun TranslationHostScreen(
     speechRecognitionListener: SpeechRecognitionListener?,
     viewModel: TranslateViewModel = activityViewModel<TranslateViewModel>()
 ) {
-    val originalText by viewModel.originalText.collectAsStateWithLifecycle()
-    val translatedText by viewModel.translatedText.collectAsStateWithLifecycle()
     val supportedModels by viewModel.supportedModels.collectAsStateWithLifecycle()
     val recentLanguage by viewModel.recentLanguages.collectAsStateWithLifecycle()
     val sourceLanguage by viewModel.sourceLanguage.collectAsStateWithLifecycle()
     val targetLanguage by viewModel.targetLanguage.collectAsStateWithLifecycle()
-    val proposedSourceLanguage by viewModel.proposedSourceLanguage.collectAsStateWithLifecycle()
 
     var selectFor by remember { mutableStateOf<LanguageFor?>(null) }
-    var listeningPartialResult by remember { mutableStateOf<String?>(null) }
 
     val showDownloadModelDialogAction by viewModel.showDownloadModelDialogAction.collectAsStateWithLifecycle()
 
@@ -105,15 +98,11 @@ fun TranslationHostScreen(
 
     val navController = rememberNavController()
 
-    val clipboardManager = LocalClipboardManager.current
-    val lifecycleOwner = LocalLifecycleOwner.current
     val context = LocalContext.current
     val wifiOnlyMessage = stringResource(dialog_download_wifi_only_message)
 
     var openDeleteModelDialogForLanguage by remember { mutableStateOf<Language?>(null) }
     var openDownloadModelDialogForLanguage by remember { mutableStateOf<Language?>(null) }
-
-    var isPasteAvailable by remember { mutableStateOf(false) }
 
     val hasBackNavigation by navController.currentBackStackEntryFlow.map { nav -> !nav.destination.hasRoute<Screen.Home>() }
         .collectAsStateWithLifecycle(false)
@@ -125,9 +114,19 @@ fun TranslationHostScreen(
         nav.destination.hasRoute<Screen.InteractiveTranslate>() && text.isNotEmpty()
     }.collectAsStateWithLifecycle(false)
 
-    val selectForTarget = { target: LanguageFor? ->
-        selectFor = target
-        showBottomSheet = true
+    val listeningPartialResults = remember(speechRecognitionListener) {
+        speechRecognitionListener?.partialResult ?: flowOf(null)
+    }
+
+    val languageActions = remember(viewModel) {
+        LanguageSelectionActions(
+            onSelectFor = { target ->
+                selectFor = target
+                showBottomSheet = true
+            },
+            onSelectProposed = viewModel::selectProposedLanguage,
+            onFlip = viewModel::flipLanguages,
+        )
     }
 
     if (showDownloadModelDialogAction != null) {
@@ -205,78 +204,37 @@ fun TranslationHostScreen(
             modifier = Modifier.padding(innerPadding)
         ) {
             composable<Screen.Home> {
-                HomeScreen(
-                    selectForTarget = selectForTarget,
-                    sourceLanguage = sourceLanguage,
-                    targetLanguage = targetLanguage,
-                    isPasteAvailable = isPasteAvailable,
-                    flipLanguages = viewModel::flipLanguages,
-                    startListening = {
-                        navController.navigate(Screen.Listen)
-                    },
-                    pasteToInteractiveTranslation = {
-                        viewModel.translate(clipboardManager.getText()?.text ?: "")
-                        navController.navigate(Screen.InteractiveTranslate)
-                    },
-                    goToInteractiveTranslation = {
-                        navController.navigate(Screen.InteractiveTranslate)
-                    },
-                    modifier = Modifier.fillMaxWidth()
+                HomeRoute(
+                    languageActions = languageActions,
+                    onOpenInteractiveTranslation = { navController.navigate(Screen.InteractiveTranslate) },
+                    onOpenListening = { navController.navigate(Screen.Listen) },
+                    modifier = Modifier.fillMaxWidth(),
                 )
             }
             composable<Screen.InteractiveTranslate> {
-                InteractiveTranslationScreen(
-                    initialText = originalText,
-                    onTextChanged = viewModel::translate,
-                    playbackOriginalText = viewModel::playbackOriginal,
-                    playbackTranslatedText = viewModel::playbackTranslated,
-                    translation = translatedText,
-                    targetLanguage = targetLanguage,
-                    sourceLanguage = sourceLanguage,
-                    proposedSourceLanguage = proposedSourceLanguage,
-                    selectProposedLanguage = viewModel::selectProposedLanguage,
-                    selectForTarget = selectForTarget,
-                    isPasteAvailable = isPasteAvailable,
-                    flipLanguages = viewModel::flipLanguages,
+                InteractiveTranslationRoute(
                     error = errorState,
+                    languageActions = languageActions,
                     modifier = Modifier.fillMaxWidth(),
                 )
             }
             composable<Screen.Listen> {
-                SpeechListeningScreenScreen(
-                    partialResult = listeningPartialResult,
-                    selectForTarget = selectForTarget,
-                    targetLanguage = targetLanguage,
-                    sourceLanguage = sourceLanguage,
-                    proposedSourceLanguage = proposedSourceLanguage,
-                    selectProposedLanguage = viewModel::selectProposedLanguage,
-                    flipLanguages = viewModel::flipLanguages,
-                    onStopListening = stopListening,
-                    onStartListening = {
-                        startListening(sourceLanguage)
-                    },
+                SpeechListeningRoute(
+                    partialResults = listeningPartialResults,
+                    startListening = startListening,
+                    stopListening = stopListening,
+                    languageActions = languageActions,
                     modifier = Modifier.fillMaxWidth(),
                 )
             }
             composable<Screen.ListenResults> {
-                SpeechListeningResults(
-                    text = originalText,
-                    translation = translatedText ?: "",
-                    selectForTarget = selectForTarget,
-                    selectProposedLanguage = viewModel::selectProposedLanguage,
-                    flipLanguages = viewModel::flipLanguages,
-                    sourceLanguage = sourceLanguage,
-                    proposedSourceLanguage = proposedSourceLanguage,
-                    targetLanguage = targetLanguage,
-                    playbackOriginalText = viewModel::playbackOriginal,
-                    playbackTranslatedText = viewModel::playbackTranslated,
-                    editText = {
+                SpeechListeningResultsRoute(
+                    startListening = startListening,
+                    onEditText = {
                         navController.popBackStack()
                         navController.navigate(Screen.InteractiveTranslate)
                     },
-                    onStartListening = {
-                        startListening(sourceLanguage)
-                    },
+                    languageActions = languageActions,
                     modifier = Modifier.fillMaxWidth(),
                 )
             }
@@ -352,13 +310,6 @@ fun TranslationHostScreen(
             )
         }
 
-        LaunchedEffect(lifecycleOwner) {
-            lifecycleOwner.lifecycle.repeatOnLifecycle(Lifecycle.State.RESUMED) {
-                delay(100)
-                isPasteAvailable = clipboardManager.hasText()
-            }
-        }
-
         LaunchedEffect(Unit) {
             val activity = context.findActivity()
             val intent = activity?.intent
@@ -413,12 +364,6 @@ fun TranslationHostScreen(
                         }
                     }
                 }
-            }
-        }
-
-        LaunchedEffect(Unit) {
-            speechRecognitionListener?.partialResult?.collect {
-                listeningPartialResult = it
             }
         }
 

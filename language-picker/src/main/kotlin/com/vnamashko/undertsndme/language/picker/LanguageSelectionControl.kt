@@ -19,6 +19,8 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.ripple
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.Immutable
+import androidx.compose.runtime.Stable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -31,16 +33,39 @@ import com.vnamashko.understandme.language.picker.R
 import com.vnamashko.understandme.theme.dimens
 import com.vnamashko.understandme.translation.model.Language
 
+/** What the language bar shows. */
+@Immutable
+data class LanguageSelectionState(
+    val source: Language? = null,
+    val target: Language? = null,
+    /** Detected language suggested as the new source; `null` hides the suggestion. */
+    val proposedSource: Language? = null,
+)
+
+/**
+ * What the language bar can do. Create it once (e.g. with `remember`) so screens that receive it
+ * can skip recomposition.
+ */
+@Stable
+class LanguageSelectionActions(
+    val onSelectFor: (LanguageFor) -> Unit,
+    val onSelectProposed: () -> Unit,
+    val onFlip: () -> Unit,
+) {
+    companion object {
+        /** Does nothing. For previews. */
+        val NoOp = LanguageSelectionActions(onSelectFor = {}, onSelectProposed = {}, onFlip = {})
+    }
+}
+
 @Composable
 fun LanguageSelectionControl(
-    sourceLanguage: Language?,
-    proposedSourceLanguage: Language?,
-    targetLanguage: Language?,
-    selectFor: (LanguageFor) -> Unit,
-    selectProposedLanguage: () -> Unit,
-    flipLanguages: () -> Unit,
+    state: LanguageSelectionState,
+    actions: LanguageSelectionActions,
     modifier: Modifier = Modifier
 ) {
+    val proposedSourceLanguage = state.proposedSource
+
     Column(
         modifier = Modifier
             .fillMaxWidth()
@@ -56,7 +81,7 @@ fun LanguageSelectionControl(
                     .clickable(
                         interactionSource = remember { MutableInteractionSource() },
                         indication = ripple(),
-                        onClick = selectProposedLanguage
+                        onClick = actions.onSelectProposed
                     ),
             ) {
                 Column(
@@ -88,9 +113,9 @@ fun LanguageSelectionControl(
             verticalAlignment = Alignment.CenterVertically
         ) {
             LanguagePill(
-                label = sourceLanguage?.displayName ?: stringResource(R.string.detect_language),
+                label = state.source?.displayName ?: stringResource(R.string.detect_language),
                 onSelected = {
-                    selectFor(LanguageFor.SOURCE)
+                    actions.onSelectFor(LanguageFor.SOURCE)
                 },
                 modifier = Modifier.weight(1f)
             )
@@ -104,15 +129,15 @@ fun LanguageSelectionControl(
                     .clickable(
                         interactionSource = remember { MutableInteractionSource() },
                         indication = ripple(bounded = false),
-                        onClick = flipLanguages
+                        onClick = actions.onFlip
                     ),
             )
             Spacer(modifier = Modifier.width(16.dp))
 
             LanguagePill(
-                label = targetLanguage?.displayName ?: stringResource(R.string.select_language),
+                label = state.target?.displayName ?: stringResource(R.string.select_language),
                 onSelected = {
-                    selectFor(LanguageFor.TARGET)
+                    actions.onSelectFor(LanguageFor.TARGET)
                 },
                 modifier = Modifier.weight(1f)
             )

@@ -29,15 +29,49 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.vnamashko.understandme.translation.model.Language
 import com.vnamashko.understandme.translation.views.ErrorCard
 import com.vnamashko.understandme.translation.views.PasteButton
 import com.vnamashko.understandme.translation.views.TranslationError
-import com.vnamashko.undertsndme.language.picker.LanguageFor
+import com.vnamashko.understandme.translation.views.rememberIsPasteAvailable
+import com.vnamashko.understandme.translation.vm.TranslateViewModel
+import com.vnamashko.understandme.utils.coreui.activityViewModel
+import com.vnamashko.undertsndme.language.picker.LanguageSelectionActions
 import com.vnamashko.undertsndme.language.picker.LanguageSelectionControl
+import com.vnamashko.undertsndme.language.picker.LanguageSelectionState
 import com.vnamashko.undertsndme.translation.screen.R
 import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.flow.debounce
+
+/**
+ * Interactive translation destination: reads [TranslateViewModel] and wires
+ * [InteractiveTranslationScreen]. [error] comes from the host, which collects the ViewModel's effects.
+ */
+@Composable
+fun InteractiveTranslationRoute(
+    error: TranslationError?,
+    languageActions: LanguageSelectionActions,
+    modifier: Modifier = Modifier,
+    viewModel: TranslateViewModel = activityViewModel(),
+) {
+    val originalText by viewModel.originalText.collectAsStateWithLifecycle()
+    val translatedText by viewModel.translatedText.collectAsStateWithLifecycle()
+    val languageState by viewModel.languageSelection.collectAsStateWithLifecycle()
+
+    InteractiveTranslationScreen(
+        initialText = originalText,
+        onTextChanged = viewModel::translate,
+        playbackOriginalText = viewModel::playbackOriginal,
+        playbackTranslatedText = viewModel::playbackTranslated,
+        translation = translatedText,
+        languageState = languageState,
+        languageActions = languageActions,
+        isPasteAvailable = rememberIsPasteAvailable(),
+        error = error,
+        modifier = modifier,
+    )
+}
 
 @Composable
 fun InteractiveTranslationScreen(
@@ -46,12 +80,8 @@ fun InteractiveTranslationScreen(
     playbackOriginalText: () -> Unit,
     playbackTranslatedText: () -> Unit,
     translation: String?,
-    targetLanguage: Language?,
-    sourceLanguage: Language?,
-    proposedSourceLanguage: Language?,
-    selectProposedLanguage: () -> Unit,
-    selectForTarget: (LanguageFor) -> Unit,
-    flipLanguages: () -> Unit,
+    languageState: LanguageSelectionState,
+    languageActions: LanguageSelectionActions,
     isPasteAvailable: Boolean,
     error: TranslationError?,
     modifier: Modifier = Modifier
@@ -72,12 +102,8 @@ fun InteractiveTranslationScreen(
         )
         Spacer(modifier = Modifier.weight(1f))
         LanguageSelectionControl(
-            sourceLanguage = sourceLanguage,
-            proposedSourceLanguage = proposedSourceLanguage,
-            targetLanguage = targetLanguage,
-            selectFor = selectForTarget,
-            selectProposedLanguage = selectProposedLanguage,
-            flipLanguages = flipLanguages
+            state = languageState,
+            actions = languageActions,
         )
     }
 }
@@ -199,12 +225,11 @@ fun InteractiveTranslationScreenPreview() {
             playbackOriginalText = {},
             playbackTranslatedText = {},
             translation = "Hello, how are you?",
-            targetLanguage = Language(code = "en", displayName = "English"),
-            sourceLanguage = Language(code = "es", displayName = "Spanish"),
-            proposedSourceLanguage = null,
-            selectForTarget = {},
-            selectProposedLanguage = {},
-            flipLanguages = {},
+            languageState = LanguageSelectionState(
+                source = Language(code = "es", displayName = "Spanish"),
+                target = Language(code = "en", displayName = "English"),
+            ),
+            languageActions = LanguageSelectionActions.NoOp,
             isPasteAvailable = true,
             error = null
         )
@@ -222,12 +247,11 @@ fun InteractiveTranslationScreenErrorPreview() {
             playbackOriginalText = {},
             playbackTranslatedText = {},
             translation = "Hello, how are you?",
-            targetLanguage = Language(code = "en", displayName = "English"),
-            sourceLanguage = Language(code = "es", displayName = "Spanish"),
-            proposedSourceLanguage = null,
-            selectProposedLanguage = {},
-            selectForTarget = {},
-            flipLanguages = {},
+            languageState = LanguageSelectionState(
+                source = Language(code = "es", displayName = "Spanish"),
+                target = Language(code = "en", displayName = "English"),
+            ),
+            languageActions = LanguageSelectionActions.NoOp,
             isPasteAvailable = true,
             error = TranslationError(
                 "Translation Error",

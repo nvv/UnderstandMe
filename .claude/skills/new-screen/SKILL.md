@@ -1,22 +1,23 @@
 ---
 name: new-screen
-description: Add a Compose screen or reusable component to an existing feature. Stateless composable with themed light/dark previews, string resources, a type-safe navigation route wired into the feature's host screen, and ViewModel intents if new behaviour is needed. Use for any new screen, dialog, bottom sheet or component.
+description: Add a Compose screen or reusable component to an existing feature. A route composable that reads the ViewModel plus a stateless screen with themed light/dark previews, string resources, a type-safe navigation route wired into the feature's host screen, and ViewModel intents if new behaviour is needed. Use for any new screen, dialog, bottom sheet or component.
 argument-hint: <ScreenName> [screen|component|dialog] <feature module>
 ---
 
 # New screen / component
 
-Rules: `docs/conventions.md` §5–6. Example to follow: `HomeScreen.kt` + how
-`TranslationHostScreen.kt` calls it.
+Rules: `docs/conventions.md` §5–6. Example to follow: `HomeScreen.kt` (`HomeRoute` + `HomeScreen`)
+and how `TranslationHostScreen.kt` calls `HomeRoute`.
 
 ## 1. Pick the kind and place
 
-- **screen**: `<module>/src/main/kotlin/.../screen/<Name>Screen.kt`, plus a navigation route.
+- **screen**: `<module>/src/main/kotlin/.../screen/<Name>Screen.kt` containing `<Name>Route`
+  (reads the ViewModel) and `<Name>Screen` (stateless), plus a navigation route.
 - **component**: reused within one feature → `views/`. Reused across features → `language-picker`
   (language UI) or ask where it should live.
 - **dialog/sheet**: composable in `views/`. The host screen decides when to show it.
 
-## 2. The composable
+## 2. The stateless screen / component
 
 - Parameters, in order:
   1. data (values or a state slice, `ImmutableList` for lists)
@@ -46,16 +47,46 @@ private fun <Name>ScreenPreview() {
 Add extra previews for important states (empty, error, loading). `AppTheme` comes from `:theme`;
 add the dependency to the module if missing.
 
-## 5. Wire it up (screens)
+## 5. The route (screens only)
+
+Above the screen, in the same file:
+
+```kotlin
+@Composable
+fun <Name>Route(
+    languageActions: LanguageSelectionActions,   // built once by the host (picker + ViewModel)
+    onOpenX: () -> Unit,                          // navigation, decided by the host
+    modifier: Modifier = Modifier,
+    viewModel: TranslateViewModel = activityViewModel(),
+) {
+    val x by viewModel.x.collectAsStateWithLifecycle()
+    val languageState by viewModel.languageSelection.collectAsStateWithLifecycle()
+    <Name>Screen(
+        x = x,
+        languageState = languageState,
+        languageActions = languageActions,
+        onDoSomething = viewModel::doSomething,
+        onOpenX = onOpenX,
+        modifier = modifier,
+    )
+}
+```
+
+- Collect only what this screen needs, as ready-made state from the ViewModel. If the screen needs
+  several flows combined and other routes would too, add a combined `StateFlow` to the ViewModel.
+- Generic helpers (e.g. `rememberIsPasteAvailable()` from `views/Clipboard.kt`) live in `views/`.
+- No `navController`, no effect collection (the host does that), no preview.
+
+## 6. Wire it into navigation
 
 - Add a route to the feature's `model/Screen.kt`: `@Serializable data object <Name> : Screen`
   (or `data class` with arguments).
-- Add `composable<Screen.<Name>> { … }` in the host's `NavHost`. Pass state from
-  `collectAsStateWithLifecycle()` and ViewModel intents as method references.
+- Add `composable<Screen.<Name>> { <Name>Route(...) }` in the host's `NavHost`, passing
+  navigation lambdas (`navController.navigate(...)`) and shared-UI lambdas (`openLanguagePicker`).
 - New behaviour goes in the ViewModel as `onX()` intents plus state fields. Follow the target
   ViewModel rules for new fields even if the old ViewModel doesn't (don't refactor the rest; see
   backlog A3/A4).
 
-## 6. Verify
+## 7. Verify
 
 `./gradlew assembleDebug` (and `test` if the ViewModel changed). Tell the user which flow to try on a device.

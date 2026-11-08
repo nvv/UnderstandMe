@@ -63,9 +63,14 @@ Don't fix backlog items on the side. Mention them if relevant, and fix one when 
 - New ViewModels: `@HiltViewModel`, one `StateFlow<XUiState>` + `Flow<XEffect>`
   (`Channel(BUFFERED).receiveAsFlow()`). No `Resources`, `Context`, strings or lambdas in state or effects.
   Emit typed data, and turn it into text in the UI.
-- Compose: one host screen per feature owns the ViewModel, navigation, scaffold, sheets and dialogs.
-  Child screens are stateless (values + lambdas, `modifier: Modifier = Modifier` last). Every
-  screen and component gets a private `@Preview` wrapped in `AppTheme`.
+- Compose has three layers:
+  - **Host** (one per feature, e.g. `TranslationHostScreen`): `NavHost`, scaffold/top bar, UI shared
+    by all screens (picker sheet, dialogs, snackbar), effect collection, navigation.
+  - **`XRoute`** (one per destination, same file as its screen): gets the ViewModel
+    (`viewModel: X = activityViewModel()`), collects what the screen needs, and passes ViewModel
+    functions down. Navigation and shared UI arrive as lambdas from the host. No preview.
+  - **`XScreen`**: stateless (values + lambdas, `modifier: Modifier = Modifier` last), with a
+    private `@Preview` wrapped in `AppTheme`. Components follow the same rules.
 - All user-facing text, including `contentDescription`, comes from `strings.xml` via `stringResource`.
 - Google `Task`s: `.await()` (kotlinx-coroutines-play-services). Never use `Tasks.await()`.
 - Tests: hand-written fakes for interfaces, `kotlinx-coroutines-test`, no mocking library.

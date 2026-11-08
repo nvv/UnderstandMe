@@ -11,7 +11,7 @@ Long-form companion to `CLAUDE.md`. Examples use real names from this codebase w
   - `di/` for its Hilt module
 - Feature modules (`translation`):
   - `vm/` holds the ViewModel, its state and effects
-  - `screen/` holds the host screen and stateless screens
+  - `screen/` holds the host screen, and one file per destination with its route + stateless screen
   - `views/` holds small composables shared within the feature
   - `model/` holds navigation routes
 - Namespace = package prefix = folder (target; two modules violate this today).
@@ -101,43 +101,92 @@ sealed interface LanguageSearchEffect {
 
 ## 5. Compose
 
+Three layers: **host → route → screen**. Real example: `TranslationHostScreen.kt` +
+`HomeScreen.kt` (`HomeRoute` and `HomeScreen`).
+
 ```kotlin
+// Host: navigation, shared UI, effects. Routes get navigation and shared UI as lambdas.
 @Composable
 fun TranslationHostScreen(viewModel: TranslateViewModel = activityViewModel()) {
-    val state by viewModel.state.collectAsStateWithLifecycle()
     LaunchedEffect(Unit) {
-        viewModel.effects.collect { effect -> /* dialogs, snackbars, intents */ }
+        viewModel.effects.collect { effect -> /* snackbar, dialogs, external intents */ }
     }
-    Scaffold(/* … */) { padding ->
-        NavHost(/* … */) {
+    Scaffold(/* top bar, snackbar host */) { padding ->
+        NavHost(navController, startDestination = Screen.Home, modifier = Modifier.padding(padding)) {
             composable<Screen.Home> {
-                HomeScreen(
-                    sourceLanguage = state.source,
-                    onSwapLanguages = viewModel::onSwapLanguages,
-                    modifier = Modifier.padding(padding),
+                HomeRoute(
+                    languageActions = languageActions,   // built once here: picker + ViewModel
+                    onOpenListening = { navController.navigate(Screen.Listen) },
                 )
             }
         }
     }
+    // language picker sheet, model dialogs …
 }
 
+// Route: same file as the screen. Gets the ViewModel, collects state, passes intents down.
+@Composable
+fun HomeRoute(
+    languageActions: LanguageSelectionActions,
+    onOpenListening: () -> Unit,
+    modifier: Modifier = Modifier,
+    viewModel: TranslateViewModel = activityViewModel(),
+) {
+    val languageState by viewModel.languageSelection.collectAsStateWithLifecycle()
+    HomeScreen(
+        languageState = languageState,
+        languageActions = languageActions,
+        onOpenListening = onOpenListening,
+        modifier = modifier,
+    )
+}
+
+// Screen: stateless, previewable.
 @Composable
 fun HomeScreen(
-    sourceLanguage: Language?,
-    onSwapLanguages: () -> Unit,
+    languageState: LanguageSelectionState,
+    languageActions: LanguageSelectionActions,
+    onOpenListening: () -> Unit,
     modifier: Modifier = Modifier,
-) { /* stateless */ }
+) { /* … */ }
 
 @Preview
 @Preview(uiMode = Configuration.UI_MODE_NIGHT_YES)
 @Composable
 private fun HomeScreenPreview() {
-    AppTheme { HomeScreen(sourceLanguage = Language("es", "Spanish"), onSwapLanguages = {}) }
+    AppTheme {
+        HomeScreen(
+            languageState = LanguageSelectionState(source = Language("es", "Spanish")),
+            languageActions = LanguageSelectionActions.NoOp,
+            onOpenListening = {},
+        )
+    }
 }
 ```
 
-- Only the host screen touches the ViewModel. Pass ViewModel functions as method references.
-- Child screens and components: values + lambdas, `modifier` last, never navigate themselves.
+- **Host**: owns `NavHost`, scaffold and top bar, UI shared by all destinations (picker sheet,
+  dialogs, snackbar), effect collection, and side effects tied to navigation. Effects are collected
+  **only here**, so each is handled once. Pass resulting UI state (e.g. the current error) down to routes.
+- **Route** (`XRoute`): the only layer besides the host that touches the ViewModel. Parameters:
+  - navigation and shared-UI lambdas, or action objects the host builds (`LanguageSelectionActions`)
+  - `modifier`
+  - `viewModel` with an `activityViewModel()` / `hiltViewModel()` default, always last
+
+  Routes never call `navController` and have no preview.
+- **Keep route signatures preview-safe.** The preview tool loads every function in the file, so a
+  route parameter whose type extends a class missing from the preview renderer (e.g. anything from
+  `android.speech`) breaks the screen's previews with `NoClassDefFoundError`. Pass plain data or a
+  `Flow` instead. `SpeechListeningRoute` takes `partialResults: Flow<String?>`, not the
+  `SpeechRecognitionListener`.
+- **Screen** (`XScreen`) and components: values + lambdas, `modifier` last, never navigate
+  themselves, no ViewModel.
+- Routes collect **ready-made UI state** from the ViewModel. If several routes would combine the
+  same flows, add a combined `StateFlow` to the ViewModel instead (`TranslateViewModel.languageSelection`).
+- Generic UI helpers are `rememberX()` composables in `views/` (`views/Clipboard.kt` →
+  `rememberIsPasteAvailable()`), or in `core-ui` if other features need them.
+- Pass ViewModel functions as method references (`viewModel::flipLanguages`).
+- Repeated parameter groups become a state class + actions class (`LanguageSelectionState` /
+  `LanguageSelectionActions`). Build the actions with `remember` so screens can skip recomposition.
 - Navigation: `@Serializable` `data object`/`data class` routes in the feature's `model/Screen.kt`.
 - Don't build Flow chains (`map`, `combine`) inside composition. Do it in the ViewModel, or wrap
   it in `remember` (lint error `FlowOperatorInvokedInComposition`).
