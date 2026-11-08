@@ -17,12 +17,28 @@ An iOS version is built separately; nothing here is shared with it.
 | `core-ui` | `com.vnamashko.understandme.utils.coreui` | Compose helpers (`activityViewModel()`). |
 | `theme` | `com.vnamashko.understandme.theme` | Material3 `AppTheme` (dynamic color), typography, `MaterialTheme.dimens`. |
 
+**Module kinds**, from top to bottom:
+
+| Kind | Modules | Role |
+|---|---|---|
+| App shell | `app` | Application, Activity, manifest. |
+| Feature | `translation` | Owns a host screen with the `NavHost`, the feature's main ViewModel, and navigation. |
+| UI module | `language-picker` (and future ones such as `camera`) | Screens (`XRoute` + `XScreen`, optionally their own ViewModel) and components that a feature hosts in its `NavHost` or screens. No `NavHost`, no navigation decisions. |
+| Foundation | `core`, `core-ui`, `theme` | Services/data (`core`, never UI), Compose helpers, theme. |
+
 **Dependency rules:**
+- Dependencies only point **downward**: app → feature → UI module → foundation. Never upward, never in a cycle.
+- A feature may depend on any UI module it hosts (`translation` → `language-picker`).
+- A UI module may depend on foundation modules and on other UI modules, but **never on a feature
+  module**. Whatever it needs from the feature (language state, actions, navigation) arrives as
+  parameters of its route or composables.
+- Feature modules never depend on each other.
+- Foundation modules depend on no project module.
+
+Current graph:
 - `app` → `translation`, `language-picker`, `core`, `theme`
 - `translation` → `core`, `core-ui`, `language-picker`
 - `language-picker` → `core`, `theme`
-- `core`, `core-ui` and `theme` depend on no project module.
-- Feature modules never depend on each other's internals, and `core` never contains UI.
 
 ## Stack
 
@@ -64,13 +80,18 @@ Don't fix backlog items on the side. Mention them if relevant, and fix one when 
   (`Channel(BUFFERED).receiveAsFlow()`). No `Resources`, `Context`, strings or lambdas in state or effects.
   Emit typed data, and turn it into text in the UI.
 - Compose has three layers:
-  - **Host** (one per feature, e.g. `TranslationHostScreen`): `NavHost`, scaffold/top bar, UI shared
-    by all screens (picker sheet, dialogs, snackbar), effect collection, navigation.
+  - **Host** (one per feature, e.g. `TranslationHostScreen`): `NavHost`, UI shared by all screens
+    (picker sheet, dialogs, snackbar), effect collection, navigation. **No top bar.**
   - **`XRoute`** (one per destination, same file as its screen): gets the ViewModel
     (`viewModel: X = activityViewModel()`), collects what the screen needs, and passes ViewModel
     functions down. Navigation and shared UI arrive as lambdas from the host. No preview.
   - **`XScreen`**: stateless (values + lambdas, `modifier: Modifier = Modifier` last), with a
     private `@Preview` wrapped in `AppTheme`. Components follow the same rules.
+  - **Every screen owns its top bar** (its own `Scaffold(topBar = …)`). Reusable top bar
+    composables in `views/` are fine; each screen places its own instance.
+  - When navigation transitions are animated, elements that look the same on both screens (top bar,
+    language bar, mic button) are **shared elements**, so they stay in place instead of animating
+    with the screen. See `docs/conventions.md` §5.
 - All user-facing text, including `contentDescription`, comes from `strings.xml` via `stringResource`.
 - Google `Task`s: `.await()` (kotlinx-coroutines-play-services). Never use `Tasks.await()`.
 - Tests: hand-written fakes for interfaces, `kotlinx-coroutines-test`, no mocking library.

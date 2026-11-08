@@ -33,7 +33,7 @@ argument-hint: <library> [module]
   `alias(libs.plugins.x)` in the module.
 - Add the library only to the module(s) that use it:
   - non-UI → `core`
-  - Compose UI → the feature module
+  - Compose UI → the feature or UI module that uses it
   - test-only → `testImplementation`
 - Never write a version string inside a module's `build.gradle.kts`.
 

@@ -14,6 +14,13 @@ Long-form companion to `CLAUDE.md`. Examples use real names from this codebase w
   - `screen/` holds the host screen, and one file per destination with its route + stateless screen
   - `views/` holds small composables shared within the feature
   - `model/` holds navigation routes
+- UI modules (`language-picker`, future `camera`) are hosted by a feature (module kinds and
+  dependency rules: `CLAUDE.md` → Modules):
+  - destinations: `<Name>Route` + stateless `<Name>Screen` in one file, optionally with their own
+    ViewModel obtained with `hiltViewModel()` (scoped to the navigation entry)
+  - shared feature state comes in as parameters (`LanguageSelectionState`, `LanguageSelectionActions`,
+    navigation lambdas), never by referencing the feature's ViewModel
+  - the hosting feature adds the `composable<Screen.X> { XRoute(...) }` entry in its `NavHost`
 - Namespace = package prefix = folder (target; two modules violate this today).
 - Sources live in `src/main/kotlin` (target; `app` still uses `src/main/java`).
 - One public top-level type per file, named after the file. Small private helpers may share it.
@@ -111,8 +118,9 @@ fun TranslationHostScreen(viewModel: TranslateViewModel = activityViewModel()) {
     LaunchedEffect(Unit) {
         viewModel.effects.collect { effect -> /* snackbar, dialogs, external intents */ }
     }
-    Scaffold(/* top bar, snackbar host */) { padding ->
-        NavHost(navController, startDestination = Screen.Home, modifier = Modifier.padding(padding)) {
+    Box(Modifier.fillMaxSize()) {
+        // No top bar here: each screen draws its own.
+        NavHost(navController, startDestination = Screen.Home) {
             composable<Screen.Home> {
                 HomeRoute(
                     languageActions = languageActions,   // built once here: picker + ViewModel
@@ -120,6 +128,7 @@ fun TranslationHostScreen(viewModel: TranslateViewModel = activityViewModel()) {
                 )
             }
         }
+        SnackbarHost(snackbarHostState, Modifier.align(Alignment.BottomCenter).navigationBarsPadding())
     }
     // language picker sheet, model dialogs …
 }
@@ -141,14 +150,21 @@ fun HomeRoute(
     )
 }
 
-// Screen: stateless, previewable.
+// Screen: stateless, previewable, owns its top bar.
 @Composable
 fun HomeScreen(
     languageState: LanguageSelectionState,
     languageActions: LanguageSelectionActions,
     onOpenListening: () -> Unit,
     modifier: Modifier = Modifier,
-) { /* … */ }
+) {
+    Scaffold(
+        topBar = { TranslationTopBar(onBack = null) },
+        modifier = modifier,
+    ) { padding ->
+        Column(Modifier.padding(padding)) { /* … */ }
+    }
+}
 
 @Preview
 @Preview(uiMode = Configuration.UI_MODE_NIGHT_YES)
@@ -164,8 +180,9 @@ private fun HomeScreenPreview() {
 }
 ```
 
-- **Host**: owns `NavHost`, scaffold and top bar, UI shared by all destinations (picker sheet,
-  dialogs, snackbar), effect collection, and side effects tied to navigation. Effects are collected
+- **Host**: owns `NavHost`, UI shared by all destinations (picker sheet, dialogs, snackbar),
+  effect collection, and side effects tied to navigation. It has **no top bar** and doesn't pad the
+  `NavHost` for one. Effects are collected
   **only here**, so each is handled once. Pass resulting UI state (e.g. the current error) down to routes.
 - **Route** (`XRoute`): the only layer besides the host that touches the ViewModel. Parameters:
   - navigation and shared-UI lambdas, or action objects the host builds (`LanguageSelectionActions`)
@@ -180,6 +197,35 @@ private fun HomeScreenPreview() {
   `SpeechRecognitionListener`.
 - **Screen** (`XScreen`) and components: values + lambdas, `modifier` last, never navigate
   themselves, no ViewModel.
+- **Top bars belong to screens.** Each destination screen wraps its content in its own
+  `Scaffold(topBar = …)`, and the top bar's actions come from that screen's own parameters
+  (`onBack`, `onClear`…). A shared look goes into a reusable composable in `views/`
+  (e.g. `TranslationTopBar(onBack, actions)`), placed by each screen. Screens that need no bar
+  still place an empty one if the layout must not jump between destinations. The screen's
+  `Scaffold` handles the status and navigation bar insets, so the host must not add them again.
+
+### Shared elements in animated transitions
+
+The `NavHost` currently uses `EnterTransition.None` / `ExitTransition.None`, so nothing below is
+needed yet. **As soon as a transition is animated**, any element that appears on both the outgoing
+and incoming screen in the same place (top bar, language bar, mic button) must be a shared element.
+Otherwise it slides or fades with the screen even though it hasn't changed.
+
+- Wrap the `NavHost` in `SharedTransitionLayout`. Each `composable<…> { }` block's receiver is the
+  `AnimatedVisibilityScope` for that destination.
+- Expose both scopes to screens through CompositionLocals defined once in the feature
+  (e.g. `views/SharedElements.kt`: `LocalSharedTransitionScope`, `LocalNavAnimatedVisibilityScope`).
+  Screens and previews then need no extra parameters. When the locals are absent (previews), the
+  helper does nothing.
+- Keep all keys in one object (e.g. `SharedElementKeys.TopBar`, `SharedElementKeys.LanguageBar`), so
+  both screens use exactly the same key.
+- Use `Modifier.sharedElement(rememberSharedContentState(key), animatedVisibilityScope)` for
+  elements that look identical on both screens. Use `Modifier.sharedBounds(...)` for containers
+  whose content differs (e.g. a top bar with different actions). Wrap them in one helper modifier
+  (e.g. `Modifier.sharedTranslateElement(key)`) that reads the locals.
+- The shared-transition APIs may still need `@OptIn(ExperimentalSharedTransitionApi::class)`. Check
+  the current Compose docs for exact signatures before using them.
+- Ask the user to check the transition on a device. Previews don't show navigation animations.
 - Routes collect **ready-made UI state** from the ViewModel. If several routes would combine the
   same flows, add a combined `StateFlow` to the ViewModel instead (`TranslateViewModel.languageSelection`).
 - Generic UI helpers are `rememberX()` composables in `views/` (`views/Clipboard.kt` →

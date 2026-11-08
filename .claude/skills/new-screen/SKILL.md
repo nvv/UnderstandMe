@@ -27,6 +27,18 @@ and how `TranslationHostScreen.kt` calls `HomeRoute`.
   Local UI-only state (`remember { mutableStateOf(...) }` for focus, text field draft, search toggle) is fine.
 - Don't build Flow chains in composition (lint `FlowOperatorInvokedInComposition`).
 - Theme values only: `MaterialTheme.colorScheme`, `MaterialTheme.typography`, `MaterialTheme.dimens`.
+- **Destination screens own their top bar:** wrap the content in
+  `Scaffold(topBar = { … }, modifier = modifier) { padding -> … Modifier.padding(padding) … }`.
+  - Reuse the feature's top bar composable from `views/` if one exists. Add a reusable one there if
+    a second screen needs the same look.
+  - Top bar actions are screen parameters (`onBack: () -> Unit`, `onClear`…). The route wires them,
+    and the host provides navigation (`onBack = { navController.popBackStack() }`).
+  - Never add a top bar to the host.
+- **Shared elements:** if the feature's navigation transitions are animated, mark elements that
+  also appear on the neighbouring screens in the same place (top bar, language bar, mic button)
+  with the feature's shared-element helper and a key from its keys object, so they stay still
+  during the transition. If the transitions are `None` (as today in `translation`), skip this.
+  Details: `docs/conventions.md` §5 → Shared elements in animated transitions.
 
 ## 3. Text
 
