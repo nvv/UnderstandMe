@@ -6,7 +6,7 @@ argument-hint: <module-name> <what the feature does>
 
 # New feature or UI module
 
-Rules: `CLAUDE.md` (module dependency rules), `docs/conventions.md` §1, §4, §5.
+Rules: `CLAUDE.md` (module dependency rules), `docs/conventions.md` §1, §4–6.
 
 ## 1. Confirm scope and kind
 

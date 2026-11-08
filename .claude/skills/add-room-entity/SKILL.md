@@ -6,7 +6,7 @@ argument-hint: <EntityName> <fields>
 
 # Add / change a Room entity
 
-Rules: `docs/conventions.md` §7. Existing example: `RecentLanguage` + `RecentLanguageDao`.
+Rules: `docs/conventions.md` §8. Existing example: `RecentLanguage` + `RecentLanguageDao`.
 
 ## 0. Room or DataStore?
 

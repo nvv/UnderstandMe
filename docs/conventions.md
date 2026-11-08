@@ -71,7 +71,32 @@ abstract class TtsModule {
 - Catch exceptions at service boundaries, map them to typed results or events, and always rethrow `CancellationException`.
 - Preview APIs (`debounce`, `flatMapLatest`) need an explicit `@OptIn(FlowPreview::class)`.
 
-## 4. ViewModels (target for new code)
+## 4. Where logic lives: not in the UI
+
+Business logic stays out of composables. The UI layer renders state and forwards user actions and
+platform callbacks. Everything else goes to the ViewModel, or to a `core` service if it's reusable
+and not tied to one screen.
+
+| Belongs in the ViewModel / services | Stays in the UI layer |
+|---|---|
+| Decisions and rules ("show the download dialog?", "is the model missing?") | Showing dialogs, sheets and snackbars for state the ViewModel exposes |
+| Mapping SDK results to app models (`Text` → `RecognizedTextBlock`) | Drawing those models (`RecognizedTextOverlay`) |
+| Filtering, debouncing, smoothing, stabilizing data (`TextBlockStabilizer`) | UI-only state: focus, scroll, a text field draft, a search toggle |
+| Owning and closing non-UI resources (ML Kit clients, analyzers, executors) | Things that need a `View`, `Context` or `LifecycleOwner`: `PreviewView` and camera binding, permission launchers, starting activities |
+
+Example: the camera screen. `CameraViewModel` owns the `TextRecognizer` (injected, closed in
+`onCleared()`), builds the `MlKitAnalyzer`, maps and stabilizes results, and exposes
+`textAnalyzer` + `state`. `CameraPreview` only creates the preview view, binds the camera to the
+lifecycle and attaches `viewModel.textAnalyzer`.
+
+Resource-owning dependencies a ViewModel closes itself are provided in a `ViewModelComponent`
+module with `@ViewModelScoped`, so each ViewModel gets its own instance
+(`camera/di/TextRecognitionModule.kt`).
+
+If you find logic in a composable while working on it, move it to the ViewModel as part of the
+task when it's small. Otherwise mention it to the user.
+
+## 5. ViewModels (target for new code)
 
 ```kotlin
 @HiltViewModel
@@ -106,7 +131,7 @@ sealed interface LanguageSearchEffect {
 - `TranslateViewModel` is activity-scoped (`activityViewModel()` from `core-ui`) so all screens of
   the feature share it. New feature-wide ViewModels do the same; screen-only ones use `hiltViewModel()`.
 
-## 5. Compose
+## 6. Compose
 
 Three layers: **host → route → screen**. Real example: `TranslationHostScreen.kt` +
 `HomeScreen.kt` (`HomeRoute` and `HomeScreen`).
@@ -242,14 +267,14 @@ Otherwise it slides or fades with the screen even though it hasn't changed.
 - Size-dependent values come from `MaterialTheme.dimens` (`theme`). Colors come from `MaterialTheme.colorScheme`, never hard-coded.
 - Previews: `private`, `…Preview` suffix, wrapped in `AppTheme`, light + dark for screens.
 
-## 6. Resources
+## 7. Resources
 
 - Strings live in the module that uses them. Key format `<area>_<what>` for new keys (`picker_search_hint`).
 - `stringResource(R.string.x)` in composables, including `contentDescription`. Never
   `LocalContext.current.getString(...)` or hard-coded text.
 - Icons: vector drawables in the module's `res/drawable`, or `Icons.*` from material icons.
 
-## 7. Data
+## 8. Data
 
 - Room for lists (`RecentLanguage`): entity in `data/model`, DAO in `data/dao`, reads return
   `Flow`, writes are `suspend`, limits/trimming in SQL.
@@ -258,7 +283,7 @@ Otherwise it slides or fades with the screen even though it hasn't changed.
 - Changing an entity means bumping the `@Database` version and adding a migration.
   Destructive migration needs the user's explicit approval.
 
-## 8. Tests
+## 9. Tests
 
 - `src/test/kotlin` in the module under test. JUnit4 + `kotlinx-coroutines-test` (`runTest`).
 - Hand-written fakes for interfaces (`FakeTranslator`, `FakeTts`) with configurable results and
@@ -266,11 +291,13 @@ Otherwise it slides or fades with the screen even though it hasn't changed.
 - ViewModel tests: `Dispatchers.setMain(StandardTestDispatcher())` in `@Before`, `resetMain()` in `@After`.
 - Name tests by behaviour: `` fun `swap languages exchanges source and target`() ``.
 
-## 9. Kotlin style
+## 10. Kotlin style
 
 - Official Kotlin style (`kotlin.code.style=official`), 4 spaces, max line length 120.
 - Trailing commas in multi-line parameter and argument lists.
 - Named arguments for boolean literals and for calls with more than ~3 arguments.
 - No `!!`. Use `?: return`, `requireNotNull(x) { "why" }`, or restructure.
 - No wildcard or unused imports.
-- Comments explain *why*. Don't leave commented-out code.
+- **No comments unless the user explicitly asks for them.** That covers inline comments and KDoc,
+  in new and edited code. Make the code explain itself with names and small functions instead.
+  Don't remove existing comments unless asked. Don't leave commented-out code.

@@ -6,7 +6,7 @@ argument-hint: <ScreenName> [screen|component|dialog] <feature module>
 
 # New screen / component
 
-Rules: `docs/conventions.md` §5–6. Example to follow: `HomeScreen.kt` (`HomeRoute` + `HomeScreen`)
+Rules: `docs/conventions.md` §4, §6–7. Example to follow: `HomeScreen.kt` (`HomeRoute` + `HomeScreen`)
 and how `TranslationHostScreen.kt` calls `HomeRoute`.
 
 ## 1. Pick the kind and place
@@ -24,6 +24,8 @@ and how `TranslationHostScreen.kt` calls `HomeRoute`.
   2. callbacks `onX: () -> Unit` / `(T) -> Unit`
   3. `modifier: Modifier = Modifier`, always last
 - Stateless: no ViewModel, no `hiltViewModel()`, no navigation, no `Context` lookups for logic.
+- No business logic: decisions, data mapping, filtering and non-UI resources belong in the ViewModel
+  (`docs/conventions.md` §4). The screen only renders state and forwards actions.
   Local UI-only state (`remember { mutableStateOf(...) }` for focus, text field draft, search toggle) is fine.
 - Don't build Flow chains in composition (lint `FlowOperatorInvokedInComposition`).
 - Theme values only: `MaterialTheme.colorScheme`, `MaterialTheme.typography`, `MaterialTheme.dimens`.
@@ -38,7 +40,7 @@ and how `TranslationHostScreen.kt` calls `HomeRoute`.
   also appear on the neighbouring screens in the same place (top bar, language bar, mic button)
   with the feature's shared-element helper and a key from its keys object, so they stay still
   during the transition. If the transitions are `None` (as today in `translation`), skip this.
-  Details: `docs/conventions.md` §5 → Shared elements in animated transitions.
+  Details: `docs/conventions.md` §6 → Shared elements in animated transitions.
 
 ## 3. Text
 

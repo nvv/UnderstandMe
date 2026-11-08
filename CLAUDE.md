@@ -13,6 +13,7 @@ An iOS version is built separately; nothing here is shared with it.
 | `app` | `com.vnamashko.understandme` | Thin shell: `@HiltAndroidApp App`, single `TranslateActivity` (also owns the `SpeechRecognizer`), manifest. Sources in `src/main/java`. |
 | `translation` | namespace `com.vnamashko.undertsndme.translation.screen` (typo, see backlog); package `com.vnamashko.understandme.translation` | The translate feature: `TranslateViewModel`, `TranslationHostScreen` + stateless screens, `views/`, navigation routes. |
 | `language-picker` | namespace `…understandme.language.picker`; package `com.vnamashko.undertsndme.language.picker` (typo) | Reusable language UI: picker sheet, language selection bar, model download/delete dialogs. |
+| `camera` | `com.vnamashko.understandme.camera` | UI module hosted by `translation`: camera screen (`CameraRoute` + `CameraScreen`, `CameraViewModel`), CameraX preview, ML Kit text recognition (bundled Latin model), `CAMERA` permission. |
 | `core` | `com.vnamashko.understandme.*` | Everything non-UI, one package per capability: `translation/`, `tts/`, `stt/`, `network/`, `settings/`, `data/`, `coroutines/`, `utils/`. Each has `di/` and `model/` where relevant. |
 | `core-ui` | `com.vnamashko.understandme.utils.coreui` | Compose helpers (`activityViewModel()`). |
 | `theme` | `com.vnamashko.understandme.theme` | Material3 `AppTheme` (dynamic color), typography, `MaterialTheme.dimens`. |
@@ -23,7 +24,7 @@ An iOS version is built separately; nothing here is shared with it.
 |---|---|---|
 | App shell | `app` | Application, Activity, manifest. |
 | Feature | `translation` | Owns a host screen with the `NavHost`, the feature's main ViewModel, and navigation. |
-| UI module | `language-picker` (and future ones such as `camera`) | Screens (`XRoute` + `XScreen`, optionally their own ViewModel) and components that a feature hosts in its `NavHost` or screens. No `NavHost`, no navigation decisions. |
+| UI module | `language-picker`, `camera` | Screens (`XRoute` + `XScreen`, optionally their own ViewModel) and components that a feature hosts in its `NavHost` or screens. No `NavHost`, no navigation decisions. |
 | Foundation | `core`, `core-ui`, `theme` | Services/data (`core`, never UI), Compose helpers, theme. |
 
 **Dependency rules:**
@@ -37,7 +38,8 @@ An iOS version is built separately; nothing here is shared with it.
 
 Current graph:
 - `app` → `translation`, `language-picker`, `core`, `theme`
-- `translation` → `core`, `core-ui`, `language-picker`, `theme`
+- `translation` → `core`, `core-ui`, `language-picker`, `theme`, `camera`
+- `camera` → `core`, `language-picker`, `theme`
 - `language-picker` → `core`, `theme`
 
 ## Stack
@@ -72,6 +74,10 @@ Details and examples: [docs/conventions.md](docs/conventions.md).
 Known problems in old code are listed in [docs/refactor-backlog.md](docs/refactor-backlog.md).
 Don't fix backlog items on the side. Mention them if relevant, and fix one when asked.
 
+- **Keep business logic out of the UI layer.** Composables render state and forward user actions.
+  Decisions, data processing, mapping SDK results to models, filtering/stabilizing, and owning non-UI
+  resources (ML Kit clients, analyzers) belong in the ViewModel or a `core` service. The UI keeps
+  only what needs a View, `Context` or lifecycle owner (camera binding, permission launchers, intents).
 - Services: `interface X` + `class XImpl @Inject constructor(...)` in the same file, bound with
   `@Binds @Singleton` in the capability's `di/` module. Inject dispatchers (`@IODispatcher`…)
   and `@AppCoroutinesScope`. Never use `Dispatchers.IO` inline.
@@ -91,10 +97,11 @@ Don't fix backlog items on the side. Mention them if relevant, and fix one when 
     composables in `views/` are fine; each screen places its own instance.
   - When navigation transitions are animated, elements that look the same on both screens (top bar,
     language bar, mic button) are **shared elements**, so they stay in place instead of animating
-    with the screen. See `docs/conventions.md` §5.
+    with the screen. See `docs/conventions.md` §6.
 - All user-facing text, including `contentDescription`, comes from `strings.xml` via `stringResource`.
 - Google `Task`s: `.await()` (kotlinx-coroutines-play-services). Never use `Tasks.await()`.
 - Tests: hand-written fakes for interfaces, `kotlinx-coroutines-test`, no mocking library.
+- **No code comments or KDoc unless the user explicitly asks for them.** Use clear names instead.
 
 ## Git
 
