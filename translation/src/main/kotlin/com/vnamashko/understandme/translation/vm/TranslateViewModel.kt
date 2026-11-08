@@ -8,9 +8,10 @@ import com.vnamashko.understandme.data.model.toRecentLanguage
 import com.vnamashko.understandme.network.NetworkConnectionManager
 import com.vnamashko.understandme.settings.SettingsDataStore
 import com.vnamashko.understandme.translation.Translator
-import com.vnamashko.understandme.translation.model.Event
 import com.vnamashko.understandme.translation.model.Language
 import com.vnamashko.understandme.translation.model.LanguageModel
+import com.vnamashko.understandme.translation.model.LanguagePair
+import com.vnamashko.understandme.translation.model.TranslationResult
 import com.vnamashko.understandme.tts.Tts
 import com.vnamashko.understandme.translation.views.TranslationError
 import com.vnamashko.undertsndme.language.picker.LanguageSelectionState
@@ -18,18 +19,22 @@ import com.vnamashko.undertsndme.translation.screen.R
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.collections.immutable.persistentListOf
 import kotlinx.collections.immutable.toImmutableList
+import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.distinctUntilChanged
-import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.firstOrNull
+import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.mapLatest
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import javax.inject.Inject
@@ -49,18 +54,26 @@ class TranslateViewModel @Inject constructor(
 
     private val _originalText: MutableStateFlow<String> = MutableStateFlow("")
     val originalText: StateFlow<String> = _originalText.asStateFlow()
-    val translatedText: StateFlow<String?> = translator.translatedText
+    private val _translatedText = MutableStateFlow<String?>(null)
+    val translatedText: StateFlow<String?> = _translatedText.asStateFlow()
+
+    private val _detectedLanguage = MutableStateFlow<String?>(null)
+    private val retryRequests = MutableStateFlow(0)
 
     private val _sourceLanguage = MutableStateFlow<Language?>(null)
     val sourceLanguage = _sourceLanguage.asStateFlow()
     private val _targetLanguage = MutableStateFlow<Language?>(null)
     val targetLanguage = _targetLanguage.asStateFlow()
 
+    private val languagePair: Flow<LanguagePair?> = combine(_sourceLanguage, _targetLanguage) { source, target ->
+        if (source != null && target != null) LanguagePair(source = source.code, target = target.code) else null
+    }.distinctUntilChanged()
+
     private val _showDownloadModelDialogAction = MutableStateFlow<(suspend () -> Unit)?>(null)
     val showDownloadModelDialogAction: StateFlow<(suspend () -> Unit)?> = _showDownloadModelDialogAction
 
     val proposedSourceLanguage: StateFlow<Language?> = combine(
-        translator.detectedLanguage,
+        _detectedLanguage,
         _sourceLanguage.map { it?.code }
     ) { detected, selected ->
         if (detected != "und" && detected != selected) translator.supportedLanguages.find { it.code == detected } else null
@@ -102,7 +115,6 @@ class TranslateViewModel @Inject constructor(
 
     fun translate(text: String) {
         _originalText.value = text
-        translator.translate(text)
     }
 
     fun selectProposedLanguage() {
@@ -121,7 +133,7 @@ class TranslateViewModel @Inject constructor(
         viewModelScope.launch {
             _effect.emit(UiEffect.ClearError)
         }
-        translator.retryTranslate()
+        retryRequests.value++
     }
 
     fun playbackOriginal() {
@@ -223,52 +235,73 @@ class TranslateViewModel @Inject constructor(
         }
     }
 
-    init {
-        viewModelScope.launch {
-            _sourceLanguage.filterNotNull().collect {
-                translator.setSourceLanguage(it.code)
+    private suspend fun showTranslation(text: String, pair: LanguagePair) {
+        if (text.isBlank()) {
+            _translatedText.value = null
+            return
+        }
+        when (val result = translator.translate(text, pair)) {
+            is TranslationResult.Translated -> {
+                _translatedText.value = result.text
+                _effect.emit(UiEffect.ClearError)
             }
+            TranslationResult.ModelMissing -> {
+                _translatedText.value = null
+                _effect.emit(modelMissingEffect())
+            }
+            TranslationResult.Failed -> {
+                _translatedText.value = null
+                _effect.emit(UiEffect.ErrorWhileTranslatingMessage)
+            }
+        }
+    }
+
+    private fun modelMissingEffect() = UiEffect.LanguageModelDoesNotExists(
+        TranslationError(
+            title = resources.getString(R.string.error_translating_title),
+            subtitle = resources.getString(
+                if (networkConnectionManager.isInternetAvailable()) {
+                    R.string.language_model_not_found
+                } else {
+                    R.string.language_model_not_found_no_internet
+                }
+            ),
+            actionText = resources.getString(R.string.error_try_again),
+            onActionClick = {
+                retryTranslate()
+            }
+        )
+    )
+
+    @OptIn(ExperimentalCoroutinesApi::class)
+    private fun observeTranslation() {
+        viewModelScope.launch {
+            combine(languagePair.filterNotNull(), retryRequests) { pair, _ -> pair }
+                .mapLatest { pair ->
+                    if (networkConnectionManager.isInternetAvailable()) {
+                        translator.downloadModelsIfNeeded(pair)
+                    }
+                    pair
+                }
+                .combine(_originalText) { pair, text -> pair to text }
+                .collectLatest { (pair, text) -> showTranslation(text, pair) }
         }
 
         viewModelScope.launch {
-            _targetLanguage.filterNotNull().collect {
-                translator.setTargetLanguage(it.code)
+            _originalText.collectLatest { text ->
+                _detectedLanguage.value = if (text.isBlank()) null else translator.identifyLanguage(text)
             }
         }
+    }
+
+    init {
+        observeTranslation()
 
         viewModelScope.launch {
             _sourceLanguage.value =
                 translator.supportedLanguages.find { it.code == dataStore.sourceLanguage.firstOrNull() }
             _targetLanguage.value =
                 translator.supportedLanguages.find { it.code == dataStore.targetLanguage.firstOrNull() }
-        }
-
-        viewModelScope.launch {
-            translator.events.collect {
-                when (it) {
-                    Event.MODEL_DOES_NOT_EXISTS -> _effect.emit(
-                        UiEffect.LanguageModelDoesNotExists(
-                            TranslationError(
-                                title = resources.getString(R.string.error_translating_title),
-                                subtitle = resources.getString(
-                                    if (networkConnectionManager.isInternetAvailable()) {
-                                        R.string.language_model_not_found
-                                    } else {
-                                        R.string.language_model_not_found_no_internet
-                                    }
-                                ),
-                                actionText = resources.getString(R.string.error_try_again),
-                                onActionClick = {
-                                    retryTranslate()
-                                }
-                            )
-                        )
-                    )
-
-                    Event.ERROR_TRANSLATING -> _effect.emit(UiEffect.ErrorWhileTranslatingMessage)
-                    Event.TRANSLATED -> _effect.emit(UiEffect.ClearError)
-                }
-            }
         }
     }
 }

@@ -34,6 +34,7 @@ android {
 
 dependencies {
     implementation(libs.kotlinx.coroutines)
+    implementation(libs.kotlinx.coroutines.play.services)
 
     implementation(libs.mlkit.translate)
     implementation(libs.mlkit.language.id)

@@ -1,6 +1,5 @@
 package com.vnamashko.understandme.translation
 
-import com.google.android.gms.tasks.Tasks
 import com.google.mlkit.common.MlKitException
 import com.google.mlkit.common.model.DownloadConditions
 import com.google.mlkit.common.model.RemoteModelManager
@@ -11,50 +10,35 @@ import com.google.mlkit.nl.translate.TranslateRemoteModel
 import com.google.mlkit.nl.translate.Translation
 import com.google.mlkit.nl.translate.TranslatorOptions
 import com.vnamashko.understandme.coroutines.AppCoroutinesScope
-import com.vnamashko.understandme.coroutines.IODispatcher
-import com.vnamashko.understandme.network.NetworkConnectionManager
-import com.vnamashko.understandme.translation.model.Event
 import com.vnamashko.understandme.translation.model.Language
-import kotlinx.coroutines.CoroutineDispatcher
+import com.vnamashko.understandme.translation.model.LanguagePair
+import com.vnamashko.understandme.translation.model.TranslationResult
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.channels.BufferOverflow
-import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.combine
-import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.flow.map
-import kotlinx.coroutines.flow.shareIn
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.tasks.await
 import java.util.Locale
 import javax.inject.Inject
 import com.google.mlkit.nl.translate.Translator as MlKitTranslator
 
 interface Translator {
-    val events: SharedFlow<Event>
-
-    val detectedLanguage: StateFlow<String?>
-
-    val translatedText: StateFlow<String?>
-
     val supportedLanguages: List<Language>
 
     val downloadedModels: StateFlow<List<String>>
 
     val downloadingModels: StateFlow<Set<String>>
 
-    fun translate(text: String)
+    suspend fun translate(text: String, pair: LanguagePair): TranslationResult
 
-    fun retryTranslate()
+    suspend fun identifyLanguage(text: String): String?
 
-    fun setSourceLanguage(language: String)
-
-    fun setTargetLanguage(language: String)
+    suspend fun downloadModelsIfNeeded(pair: LanguagePair)
 
     fun deleteModel(language: String)
 
@@ -62,35 +46,15 @@ interface Translator {
 }
 
 class TranslatorImpl @Inject constructor(
-    @AppCoroutinesScope val externalScope: CoroutineScope,
-    @IODispatcher val ioDispatcher: CoroutineDispatcher,
-    private val networkConnectionManager: NetworkConnectionManager
-): Translator {
+    @AppCoroutinesScope private val externalScope: CoroutineScope,
+) : Translator {
 
     private val modelManager = RemoteModelManager.getInstance()
 
-    private val languageIdentifier = LanguageIdentification
-        .getClient(
-            LanguageIdentificationOptions.Builder()
-                .setConfidenceThreshold(0.8f)
-                .build()
-        )
-
-    private val _events: MutableSharedFlow<Event> = MutableSharedFlow(1)
-    override val events: SharedFlow<Event> = _events.asSharedFlow()
-
-    private val _detectedLanguage: MutableStateFlow<String?> = MutableStateFlow(null)
-    override val detectedLanguage: StateFlow<String?> = _detectedLanguage.asStateFlow()
-
-    private val sourceLanguage = MutableStateFlow<String?>(null)
-    private val targetLanguage = MutableStateFlow<String?>(null)
-
-    private val textToTranslate = MutableStateFlow<String?>(null)
-
-    private val retryTrigger = MutableSharedFlow<Boolean>(
-        replay = 1,
-        extraBufferCapacity = 1,
-        onBufferOverflow = BufferOverflow.DROP_OLDEST
+    private val languageIdentifier = LanguageIdentification.getClient(
+        LanguageIdentificationOptions.Builder()
+            .setConfidenceThreshold(0.8f)
+            .build()
     )
 
     override val supportedLanguages: List<Language> by lazy {
@@ -100,107 +64,87 @@ class TranslatorImpl @Inject constructor(
     }
 
     private val _downloadingModels = MutableStateFlow<Set<String>>(emptySet())
-    override val downloadingModels = _downloadingModels
+    override val downloadingModels: StateFlow<Set<String>> = _downloadingModels.asStateFlow()
 
-    private val _downloadedModels: MutableStateFlow<Set<TranslateRemoteModel>> = MutableStateFlow(
-        emptySet()
-    )
+    private val _downloadedModels = MutableStateFlow<Set<TranslateRemoteModel>>(emptySet())
+    override val downloadedModels: StateFlow<List<String>> = _downloadedModels
+        .map { models -> models.map { it.language } }
+        .stateIn(externalScope, SharingStarted.Lazily, emptyList())
 
-    override val downloadedModels: StateFlow<List<String>> = _downloadedModels.map {
-        it.map { it.language }
-    }.stateIn(externalScope, SharingStarted.Lazily, emptyList())
+    private var client: Pair<LanguagePair, MlKitTranslator>? = null
 
-    private val translator: SharedFlow<MlKitTranslator?> =
-        combine(
-            sourceLanguage.filterNotNull(),
-            targetLanguage.filterNotNull(),
-            retryTrigger
-        ) { source, target, _ ->
-            val options = TranslatorOptions.Builder()
-                .setSourceLanguage(source)
-                .setTargetLanguage(target)
-                .build()
-
-        val translator = Translation.getClient(options)
-        if (networkConnectionManager.isInternetAvailable()) {
-            Tasks.await(translator.downloadModelIfNeeded())
-            _downloadedModels.value = getDownloadedModels()
+    override suspend fun translate(text: String, pair: LanguagePair): TranslationResult =
+        try {
+            TranslationResult.Translated(clientFor(pair).translate(text).await())
+        } catch (e: CancellationException) {
+            throw e
+        } catch (e: MlKitException) {
+            if (e.errorCode == MlKitException.NOT_FOUND) TranslationResult.ModelMissing else TranslationResult.Failed
+        } catch (_: Exception) {
+            TranslationResult.Failed
         }
-        translator
-    }.shareIn(externalScope, SharingStarted.Eagerly, 1)
 
-    override val translatedText = combine(translator.filterNotNull(), textToTranslate) { translator, text ->
-        if (text == null) {
-            _detectedLanguage.value = null
+    override suspend fun identifyLanguage(text: String): String? =
+        try {
+            languageIdentifier.identifyLanguage(text).await()
+        } catch (e: CancellationException) {
+            throw e
+        } catch (_: Exception) {
             null
-        } else {
-
-            languageIdentifier.identifyLanguage(text).addOnSuccessListener {
-                _detectedLanguage.value = it
-            }
-
-            val task = translator.translate(text)
-            task.addOnFailureListener { ex ->
-                if (ex is MlKitException && ex.errorCode == MlKitException.NOT_FOUND) {
-                    _events.tryEmit(Event.MODEL_DOES_NOT_EXISTS)
-                } else {
-                    _events.tryEmit(Event.ERROR_TRANSLATING)
-                }
-            }
-            val translated = kotlin.runCatching {
-                Tasks.await(task)
-            }
-            translated.getOrNull()?.also {
-                // emit event only when translation was successful
-                _events.emit(Event.TRANSLATED)
-            }
         }
-    }.stateIn(externalScope, SharingStarted.Lazily, null)
 
-    override fun translate(text: String) {
-        textToTranslate.value = text.takeIf { it.isNotBlank() }
-    }
-
-    override fun retryTranslate() {
-        // trigger retry by emitting new translator in case it was not downloaded
-        retryTrigger.tryEmit(true)
-    }
-
-    override fun setSourceLanguage(language: String) {
-        sourceLanguage.value = language
-    }
-
-    override fun setTargetLanguage(language: String) {
-        targetLanguage.value = language
+    override suspend fun downloadModelsIfNeeded(pair: LanguagePair) {
+        try {
+            clientFor(pair).downloadModelIfNeeded().await()
+            refreshDownloadedModels()
+        } catch (e: CancellationException) {
+            throw e
+        } catch (_: Exception) {
+            return
+        }
     }
 
     override fun deleteModel(language: String) {
-        _downloadedModels.value.find { it.language == language }?.let {
-            externalScope.launch(ioDispatcher) {
-                Tasks.await(modelManager.deleteDownloadedModel(it))
-                _downloadedModels.value = getDownloadedModels()
-            }
+        val model = _downloadedModels.value.find { it.language == language } ?: return
+        externalScope.launch {
+            runCatching { modelManager.deleteDownloadedModel(model).await() }
+            refreshDownloadedModels()
         }
     }
 
     override fun downloadModel(language: String) {
-        externalScope.launch(ioDispatcher) {
+        externalScope.launch {
             _downloadingModels.value += language
-            val model = TranslateRemoteModel.Builder(language).build()
-            Tasks.await(modelManager.download(model, DownloadConditions.Builder().build()))
-            _downloadedModels.value = getDownloadedModels()
-            _downloadingModels.value -= language
+            try {
+                val model = TranslateRemoteModel.Builder(language).build()
+                runCatching { modelManager.download(model, DownloadConditions.Builder().build()).await() }
+                refreshDownloadedModels()
+            } finally {
+                _downloadingModels.value -= language
+            }
         }
     }
 
-    private fun getDownloadedModels() =
-        Tasks.await(modelManager.getDownloadedModels(TranslateRemoteModel::class.java))
+    private fun clientFor(pair: LanguagePair): MlKitTranslator =
+        client?.takeIf { it.first == pair }?.second
+            ?: Translation.getClient(
+                TranslatorOptions.Builder()
+                    .setSourceLanguage(pair.source)
+                    .setTargetLanguage(pair.target)
+                    .build()
+            ).also { newClient ->
+                client?.second?.close()
+                client = pair to newClient
+            }
+
+    private suspend fun refreshDownloadedModels() {
+        runCatching { modelManager.getDownloadedModels(TranslateRemoteModel::class.java).await() }
+            .onSuccess { _downloadedModels.value = it }
+    }
 
     init {
         externalScope.launch {
-            retryTrigger.emit(true)
-
-            _downloadedModels.value = getDownloadedModels()
+            refreshDownloadedModels()
         }
     }
 }
