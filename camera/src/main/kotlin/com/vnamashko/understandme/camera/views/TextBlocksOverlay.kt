@@ -36,8 +36,8 @@ fun TextBlocksOverlay(
                 }
                 close()
             }
-            drawPath(path = path, color = Color.White.copy(alpha = 0.2f))
-            drawPath(path = path, color = Color.White, style = stroke)
+            drawPath(path = path, color = block.backgroundColor)
+            drawPath(path = path, color = block.backgroundColor, style = stroke)
         }
     }
 }
@@ -48,11 +48,16 @@ private fun TextBlocksOverlayPreview() {
     AppTheme {
         TextBlocksOverlay(
             blocks = persistentListOf(
-                RecognizedTextBlock("Salida", Rect(left = 300f, top = 600f, right = 900f, bottom = 760f)),
+                RecognizedTextBlock(
+                    text = "Salida",
+                    bounds = Rect(left = 300f, top = 600f, right = 900f, bottom = 760f),
+                    backgroundColor = Color(0xFF2E7D32),
+                ),
                 RecognizedTextBlock(
                     text = "Andén 3",
                     bounds = Rect(left = 400f, top = 960f, right = 1200f, bottom = 1240f),
                     corners = listOf(Offset(400f, 1100f), Offset(1170f, 960f), Offset(1200f, 1100f), Offset(430f, 1240f)),
+                    backgroundColor = Color(0xFFF5F0E6),
                 ),
             ),
             imageSize = Size(1500f, 2000f),

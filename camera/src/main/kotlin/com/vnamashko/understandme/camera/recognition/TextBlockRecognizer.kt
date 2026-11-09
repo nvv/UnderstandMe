@@ -26,6 +26,10 @@ class TextBlockRecognizerImpl @Inject constructor() : TextBlockRecognizer {
     override suspend fun recognize(bitmap: Bitmap): ImmutableList<RecognizedTextBlock> =
         try {
             recognizer.process(InputImage.fromBitmap(bitmap, 0)).await().toBlocks()
+                .map { block ->
+                    bitmap.backgroundColorAround(block.corners)?.let { block.copy(backgroundColor = it) } ?: block
+                }
+                .toImmutableList()
         } catch (e: CancellationException) {
             throw e
         } catch (_: Exception) {

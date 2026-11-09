@@ -3,6 +3,7 @@ package com.vnamashko.understandme.camera.model
 import androidx.compose.runtime.Immutable
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Rect
+import androidx.compose.ui.graphics.Color
 
 @Immutable
 data class RecognizedTextBlock(
@@ -10,4 +11,5 @@ data class RecognizedTextBlock(
     val bounds: Rect,
     val corners: List<Offset> = listOf(bounds.topLeft, bounds.topRight, bounds.bottomRight, bounds.bottomLeft),
     val lineHeight: Float = bounds.height,
+    val backgroundColor: Color = Color.White,
 )
