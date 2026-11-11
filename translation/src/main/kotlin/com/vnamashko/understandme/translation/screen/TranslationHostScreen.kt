@@ -39,7 +39,6 @@ import com.vnamashko.understandme.language.picker.R.string.translate_to
 import com.vnamashko.understandme.stt.RecognitionResult
 import com.vnamashko.understandme.stt.SpeechRecognitionListener
 import com.vnamashko.understandme.translation.model.Language
-import com.vnamashko.understandme.camera.screen.CameraRoute
 import com.vnamashko.understandme.translation.model.Screen
 import com.vnamashko.understandme.translation.views.LanguageModelDownloadDialog
 import com.vnamashko.understandme.translation.views.TranslationError
@@ -166,7 +165,7 @@ fun TranslationHostScreen(
                 )
             }
             composable<Screen.Camera> {
-                CameraRoute(
+                TranslationCameraRoute(
                     onBack = { navController.popBackStack() },
                     modifier = Modifier.fillMaxWidth(),
                 )

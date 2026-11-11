@@ -2,7 +2,7 @@ package com.vnamashko.understandme.camera.model
 
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
-import kotlin.math.max
+import androidx.compose.ui.layout.ContentScale
 
 data class CropTransform(
     val scale: Float,
@@ -13,10 +13,16 @@ data class CropTransform(
         y = point.y * scale + offset.y,
     )
 
+    fun map(box: OrientedBox): OrientedBox = box.copy(
+        origin = map(box.origin),
+        width = box.width * scale,
+        height = box.height * scale,
+    )
+
     companion object {
-        fun of(imageSize: Size, viewSize: Size): CropTransform {
+        fun of(imageSize: Size, viewSize: Size, contentScale: ContentScale = ContentScale.Crop): CropTransform {
             if (imageSize.width <= 0f || imageSize.height <= 0f) return CropTransform(1f, Offset.Zero)
-            val scale = max(viewSize.width / imageSize.width, viewSize.height / imageSize.height)
+            val scale = contentScale.computeScaleFactor(imageSize, viewSize).scaleX
             return CropTransform(
                 scale = scale,
                 offset = Offset(

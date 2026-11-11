@@ -3,6 +3,8 @@
     <string name="camera_back">Back</string>
     <string name="open_camera">Translate with camera</string>
     <string name="camera_take_photo">Take photo</string>
+    <string name="camera_pick_image">Choose image</string>
+    <string name="camera_model_missing">Download the language models for the selected languages to translate text.</string>
     <string name="camera_permission_title">Camera access needed</string>
     <string name="camera_permission_message">Allow UnderstandMe to use the camera to recognize text around you. Images are processed on your device.</string>
     <string name="camera_permission_open_settings">Open settings</string>

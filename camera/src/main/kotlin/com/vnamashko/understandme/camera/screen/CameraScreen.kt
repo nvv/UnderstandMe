@@ -9,19 +9,15 @@ import android.net.Uri
 import android.provider.Settings
 import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.PickVisualMediaRequest
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.camera.core.ImageCapture
-import androidx.camera.core.ImageCaptureException
-import androidx.camera.core.ImageProxy
-import androidx.camera.view.CameraController
-import androidx.camera.view.LifecycleCameraController
-import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.Button
@@ -31,6 +27,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
@@ -38,12 +35,10 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.layout.ContentScale
@@ -59,12 +54,16 @@ import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.repeatOnLifecycle
 import com.vnamashko.understandme.camera.R
-import com.vnamashko.understandme.camera.model.RecognizedTextBlock
+import com.vnamashko.understandme.camera.model.PhotoSource
+import com.vnamashko.understandme.camera.model.TranslatedTextBlock
+import com.vnamashko.understandme.camera.views.GalleryButton
 import com.vnamashko.understandme.camera.views.CameraPreview
+import com.vnamashko.understandme.camera.views.rememberCameraPreviewState
 import com.vnamashko.understandme.camera.views.ShutterButton
-import com.vnamashko.understandme.camera.views.TextBlocksOverlay
+import com.vnamashko.understandme.camera.views.TranslatedPhoto
 import com.vnamashko.understandme.camera.vm.CameraViewModel
 import com.vnamashko.understandme.theme.AppTheme
+import com.vnamashko.understandme.translation.model.LanguagePair
 import kotlinx.collections.immutable.ImmutableList
 import kotlinx.collections.immutable.persistentListOf
 
@@ -76,6 +75,7 @@ enum class CameraPermission {
 
 @Composable
 fun CameraRoute(
+    languagePair: LanguagePair?,
     onBack: () -> Unit,
     modifier: Modifier = Modifier,
     viewModel: CameraViewModel = hiltViewModel(),
@@ -83,9 +83,7 @@ fun CameraRoute(
     val state by viewModel.state.collectAsStateWithLifecycle()
     val context = LocalContext.current
     val lifecycleOwner = LocalLifecycleOwner.current
-    val controller = remember {
-        LifecycleCameraController(context).apply { setEnabledUseCases(CameraController.IMAGE_CAPTURE) }
-    }
+    val previewState = rememberCameraPreviewState()
 
     var permission by rememberSaveable {
         mutableStateOf(if (context.hasCameraPermission()) CameraPermission.GRANTED else CameraPermission.UNKNOWN)
@@ -94,10 +92,18 @@ fun CameraRoute(
         permission = if (granted) CameraPermission.GRANTED else CameraPermission.DENIED
     }
 
+    val imagePicker = rememberLauncherForActivityResult(ActivityResultContracts.PickVisualMedia()) { uri ->
+        uri?.let(viewModel::onImagePicked)
+    }
+
     LaunchedEffect(Unit) {
         if (permission == CameraPermission.UNKNOWN) {
             permissionLauncher.launch(Manifest.permission.CAMERA)
         }
+    }
+
+    LaunchedEffect(languagePair) {
+        viewModel.onLanguagePairChanged(languagePair)
     }
 
     LaunchedEffect(lifecycleOwner) {
@@ -113,22 +119,17 @@ fun CameraRoute(
     CameraScreen(
         permission = permission,
         photo = state.photo,
-        isTakingPhoto = state.isTakingPhoto,
-        textBlocks = state.textBlocks,
-        isRecognizing = state.isRecognizing,
-        onTakePhoto = {
-            viewModel.onTakingPhoto()
-            controller.takePicture(
-                ContextCompat.getMainExecutor(context),
-                object : ImageCapture.OnImageCapturedCallback() {
-                    override fun onCaptureSuccess(image: ImageProxy) = viewModel.onPhotoTaken(image)
-                    override fun onError(exception: ImageCaptureException) = viewModel.onPhotoFailed()
-                },
-            )
+        photoSource = state.photoSource,
+        translatedBlocks = state.translatedBlocks,
+        isProcessing = state.isProcessing,
+        isModelMissing = state.isModelMissing,
+        onTakePhoto = { previewState.capture()?.let(viewModel::onPhotoTaken) },
+        onPickImage = {
+            imagePicker.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly))
         },
         onBack = if (state.photo != null) viewModel::onPhotoDismissed else onBack,
         onOpenSettings = { context.openAppSettings() },
-        cameraPreview = { CameraPreview(controller = controller, modifier = Modifier.fillMaxSize()) },
+        cameraPreview = { CameraPreview(state = previewState, modifier = Modifier.fillMaxSize()) },
         modifier = modifier,
     )
 }
@@ -138,10 +139,12 @@ fun CameraRoute(
 fun CameraScreen(
     permission: CameraPermission,
     photo: ImageBitmap?,
-    isTakingPhoto: Boolean,
-    textBlocks: ImmutableList<RecognizedTextBlock>,
-    isRecognizing: Boolean,
+    photoSource: PhotoSource,
+    translatedBlocks: ImmutableList<TranslatedTextBlock>,
+    isProcessing: Boolean,
+    isModelMissing: Boolean,
     onTakePhoto: () -> Unit,
+    onPickImage: () -> Unit,
     onBack: () -> Unit,
     onOpenSettings: () -> Unit,
     cameraPreview: @Composable () -> Unit,
@@ -169,45 +172,73 @@ fun CameraScreen(
         modifier = modifier,
     ) { innerPadding ->
         Box(modifier = Modifier.fillMaxSize()) {
-            when (permission) {
-                CameraPermission.GRANTED -> if (photo != null) {
-                    Image(
-                        bitmap = photo,
-                        contentDescription = null,
-                        contentScale = ContentScale.Crop,
-                        modifier = Modifier.fillMaxSize(),
-                    )
-                    TextBlocksOverlay(
-                        blocks = textBlocks,
-                        imageSize = Size(photo.width.toFloat(), photo.height.toFloat()),
-                        modifier = Modifier.fillMaxSize(),
-                    )
-                    if (isRecognizing) {
-                        CircularProgressIndicator(
-                            color = Color.White,
-                            modifier = Modifier.align(Alignment.Center),
-                        )
-                    }
-                } else {
-                    cameraPreview()
-                    ShutterButton(
-                        onClicked = onTakePhoto,
-                        isEnabled = !isTakingPhoto,
-                        modifier = Modifier
-                            .align(Alignment.BottomCenter)
-                            .padding(bottom = innerPadding.calculateBottomPadding() + 24.dp),
+            if (photo != null) {
+                TranslatedPhoto(
+                    photo = photo,
+                    translatedBlocks = translatedBlocks,
+                    contentScale = if (photoSource == PhotoSource.GALLERY) ContentScale.Fit else ContentScale.Crop,
+                    modifier = Modifier.fillMaxSize(),
+                )
+                if (isProcessing) {
+                    CircularProgressIndicator(
+                        color = Color.White,
+                        modifier = Modifier.align(Alignment.Center),
                     )
                 }
-                CameraPermission.DENIED -> CameraPermissionDenied(
-                    onOpenSettings = onOpenSettings,
-                    modifier = Modifier
-                        .align(Alignment.Center)
-                        .padding(innerPadding)
-                        .padding(24.dp),
-                )
-                CameraPermission.UNKNOWN -> Unit
+                if (isModelMissing) {
+                    ModelMissingBanner(
+                        modifier = Modifier
+                            .align(Alignment.TopCenter)
+                            .padding(top = innerPadding.calculateTopPadding())
+                            .padding(horizontal = 16.dp),
+                    )
+                }
+            } else {
+                when (permission) {
+                    CameraPermission.GRANTED -> {
+                        cameraPreview()
+                        ShutterButton(
+                            onClicked = onTakePhoto,
+                            modifier = Modifier
+                                .align(Alignment.BottomCenter)
+                                .padding(bottom = innerPadding.calculateBottomPadding() + 24.dp),
+                        )
+                    }
+                    CameraPermission.DENIED -> CameraPermissionDenied(
+                        onOpenSettings = onOpenSettings,
+                        modifier = Modifier
+                            .align(Alignment.Center)
+                            .padding(innerPadding)
+                            .padding(24.dp),
+                    )
+                    CameraPermission.UNKNOWN -> Unit
+                }
+                if (permission != CameraPermission.UNKNOWN) {
+                    GalleryButton(
+                        onClicked = onPickImage,
+                        modifier = Modifier
+                            .align(Alignment.BottomStart)
+                            .padding(start = 40.dp, bottom = innerPadding.calculateBottomPadding() + 36.dp),
+                    )
+                }
             }
         }
+    }
+}
+
+@Composable
+private fun ModelMissingBanner(modifier: Modifier = Modifier) {
+    Surface(
+        color = MaterialTheme.colorScheme.secondaryContainer,
+        shape = RoundedCornerShape(12.dp),
+        modifier = modifier,
+    ) {
+        Text(
+            text = stringResource(R.string.camera_model_missing),
+            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.onSecondaryContainer,
+            modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp),
+        )
     }
 }
 
@@ -254,10 +285,12 @@ private fun CameraScreenPreview() {
         CameraScreen(
             permission = CameraPermission.GRANTED,
             photo = null,
-            isTakingPhoto = false,
-            textBlocks = persistentListOf(),
-            isRecognizing = false,
+            photoSource = PhotoSource.CAMERA,
+            translatedBlocks = persistentListOf(),
+            isProcessing = false,
+            isModelMissing = false,
             onTakePhoto = {},
+            onPickImage = {},
             onBack = {},
             onOpenSettings = {},
             cameraPreview = { Box(Modifier.fillMaxSize().background(Color.DarkGray)) },
@@ -272,10 +305,12 @@ private fun CameraScreenPermissionDeniedPreview() {
         CameraScreen(
             permission = CameraPermission.DENIED,
             photo = null,
-            isTakingPhoto = false,
-            textBlocks = persistentListOf(),
-            isRecognizing = false,
+            photoSource = PhotoSource.CAMERA,
+            translatedBlocks = persistentListOf(),
+            isProcessing = false,
+            isModelMissing = false,
             onTakePhoto = {},
+            onPickImage = {},
             onBack = {},
             onOpenSettings = {},
             cameraPreview = {},

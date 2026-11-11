@@ -12,4 +12,6 @@ data class RecognizedTextBlock(
     val corners: List<Offset> = listOf(bounds.topLeft, bounds.topRight, bounds.bottomRight, bounds.bottomLeft),
     val lineHeight: Float = bounds.height,
     val backgroundColor: Color = Color.White,
+    val language: String? = null,
+    val confidence: Float = 1f,
 )

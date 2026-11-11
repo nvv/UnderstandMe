@@ -56,6 +56,7 @@ dependencies {
     implementation(libs.androidx.camera.lifecycle)
     implementation(libs.androidx.camera.view)
     implementation(libs.mlkit.text.recognition)
+    implementation(libs.telephoto.zoomable)
 
     implementation(libs.hilt.android)
     implementation(libs.hilt.navigation.compose)
